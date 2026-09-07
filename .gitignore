@@ -141,3 +141,13 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Entorno virtual
+venv/
+__pycache__/
+
+# Datos crudos
+data/
+*.xls
+*.xlsx
+*.csv
