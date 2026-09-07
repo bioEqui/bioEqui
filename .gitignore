@@ -142,13 +142,16 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-# ───__________________───
-
 # Datos del pipeline: no se versionan
 data/bronce/*
 data/plata/*
 data/oro/*
 !data/**/.gitkeep
+
+# Datos crudos sueltos
+*.xls
+*.xlsx
+*.csv
 
 # Python
 __pycache__/
