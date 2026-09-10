@@ -17,7 +17,7 @@ PAUSA = 2
 MAX_PAGINAS = 100  # Tope de seguridad (5000 productos)
 
 CABECERAS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+    "User-Agent": "bioEqui-academico/0.1 (proyecto universitario)",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "es-CL,es-419;q=0.9,es;q=0.8,en;q=0.7",
     "Origin": "https://www.cruzverde.cl",
@@ -28,12 +28,13 @@ CABECERAS = {
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-site",
-    "Cookie": "visid_incap_3139068=oCl8lmZIR+GbyOuLVdTeUcFAn2oAAAAAQUIPAAAAAAA4TMX4NTXmvhAI+01DFLiA; _gcl_au=1.1.1057299671.1788821701; _ga=GA1.1.655145421.1788821701; _fbp=fb.1.1788821701298.1240141483; visid_incap_3140215=heQiUtInSQOY4csNvwAN28RAn2oAAAAAQUIPAAAAAAD5H2AEDr2II3VSlgmHTTnM; _hjSessionUser_1614665=eyJpZCI6ImMyMTRkYmZjLWMyZjItNWJkYi1hMjY1LTg1ODEyYTBjZDEzNSIsImNyZWF0ZWQiOjE3ODg4MjE3MDE0MTUsImV4aXN0aW5nIjp0cnVlfQ==; nlbi_3139068=5TXRIIBDC0yYTiPz2rCdXQAAAACOyfXmJ52yMJ3zaOUC2ofa; incap_ses_765_3139068=TIIXWPAQsygf4GUXDNSdCvQqoGoAAAAADyr89kJkgtLQVHM4nG52ng==; _hjSession_1614665=eyJpZCI6IjUzN2YwZTE2LWUzNmUtNDNjMS1hNzEwLWYyY2RjZjAxYzhhZSIsImMiOjE3ODg4ODE2NTIzMDIsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=; nlbi_3140215=hNUrdmtn6ipCxP8TxkkkqQAAAAB5JmGNUlgIJW2/VPm2IBVf; incap_ses_765_3140215=Ru+6K7TMJSMM0WYXDNSdCvUqoGoAAAAAyGDvR1pcYpfBPexwlJLOmA==; connect.sid=s%3Acruzverde-672b04ab-db6e-4213-91a2-5659059969e8.k2%2FuKz8KtnDMbFWPxaOLvdwfVPtZKvekeHHSS7Re5gU; _ga_CVCL=GS2.1.s1788881652$o3$g1$t1788881990$j59$l0$h1846661923; _ga_GMKXQPNSW5=GS2.1.s1788881652$o2$g1$t1788882067$j59$l0$h2068356593"
+    "Cookie": "_ga=GA1.1.26501606.1771881384; visid_incap_3139068=hS8LO6kJRoipTnwtFk+hgRragGoAAAAAQUIPAAAAAABCF9LM+cKL0UYa/Q27tpmU; _fbp=fb.1.1786829337059.4200813829; _gcl_au=1.1.34965926.1786829337; visid_incap_3140215=uxxo6B6HQ2CsDGfoCKVxQhvagGoAAAAAQUIPAAAAAAC+JeOlyqoUrwHJ4GjWFy+L; _tt_enable_cookie=1; _ttp=01M03N7ZHFKTVHEZRM2FS7MRSB_.tt.1; _hjMinimizedPolls=1860980; _hjDonePolls=1860980; _hjSessionUser_1614665=eyJpZCI6IjcyMTBjNTljLTUyNjItNWNmYy1iMzBiLWMzMjJiNGI3ZjMyMiIsImNyZWF0ZWQiOjE3ODY4MjkzMzk5MzcsImV4aXN0aW5nIjp0cnVlfQ==; ttcsid_D0EEUDRC77UCMMV6IDS0=1786829340244::GWfRKXEjA0gL7Y2fFFut.1.1786829499541.1; ttcsid=1786829340245::9ZAHI-tRfHB1RKrd7kC2.1.1786829496491.0::1.153128.154870::99509.20.1149.11176::174091.87.2200; nlbi_3139068=WM6uf//IqAfJxw752rCdXQAAAACz6eGNCnb17ntujW+W7/q6; nlbi_3140215=NlAtcrN0tFK6wWSBxkkkqQAAAADUa2jKkc47vOXdZnkqzpT/; incap_ses_765_3140215=D0MXMQRqQG0H7W0bDNSdCiEwomoAAAAA6j2AgCRJ660nGcG92aPwqw==; connect.sid=s%3Acruzverde-4e402a9a-b875-4af7-9e8d-74dec328ec9a.bdgx3vGKDwlOvng7ROnbhwEInfaqzUFlyrOgYggDA5w; _hjSession_1614665=eyJpZCI6ImQ4OWU4MzJkLTQxYzEtNDc5Yi1hMDg1LWU5M2I2NWZlZmUzOSIsImMiOjE3ODkwMTQwNTA3MjYsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=; incap_ses_765_3139068=zhr6AjCsxHv/0HEbDNSdCsE0omoAAAAA11J0iPKSHvxbWOoTxt6RVw==; _ga_GMKXQPNSW5=GS2.1.s1788999589$o4$g1$t1789015277$j20$l0$h811279683; _ga_CVCL=GS2.1.s1789014050$o8$g1$t1789015277$j17$l0$h1427648014"
 }
 
 def extraer_medicamentos():
     productos_totales = []
     offset = 0
+    intentos = 0             
 
     print("Iniciando extracción masiva del catálogo de Cruz Verde...")
 
@@ -48,7 +49,7 @@ def extraer_medicamentos():
             "refine[]": "cgid=ver-todo-medicamentos",
             "isAndes": "true",
             "requestPage": "CLP",
-            "andesUserId": "ablew1xrc2xroRwKpHmqYYkbFJ",
+            "andesUserId": "abl0kZlupGwrgRl0s2xaYYxbkZ",
             "inventoryId": "Zonapañales1119",
             "inventoryZone": "Zonapañales1119"
         }
@@ -68,10 +69,25 @@ def extraer_medicamentos():
                 
             productos_totales.extend(items)
             offset += POR_PAGINA
+            intentos = 0
             time.sleep(PAUSA)
             
         except requests.exceptions.RequestException as e:
-            print(f"Error de conexión en la página {pagina}: {e}")
+            # Un 503 suele ser transitorio: conviene reintentar antes de
+            # abandonar, porque cortar deja el catalogo incompleto y eso
+            # falsea la comparacion entre fechas
+            codigo = getattr(e.response, "status_code", None)
+
+            if codigo in (429, 500, 502, 503, 504) and intentos < 3:
+                intentos += 1
+                espera = PAUSA * 5 * intentos
+                print(f"    {codigo} en offset {offset}, reintento "
+                      f"{intentos}/3 en {espera}s")
+                time.sleep(espera)
+                continue
+
+            print(f"Error de conexion en la pagina {pagina}: {e}")
+            print(f"ATENCION: descarga incompleta, {len(productos_totales)} productos")
             break
 
     return productos_totales
