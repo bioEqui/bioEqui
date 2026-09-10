@@ -192,8 +192,27 @@ def main():
                 if len(token) > 5:
                     vocabulario.add(sin_tildes(token))
 
-    productos = leer("drsimi_productos.csv")
-    precios = {p["id_producto"]: p for p in leer("drsimi_precios.csv")}
+    # Se leen todas las farmacias presentes en plata. Cada una tiene su
+    # propio scraper y normalizador, pero desde aqui el tratamiento es
+    # identico: por eso plata usa las mismas columnas para todas.
+    productos = []
+    precios = {}
+
+    for ruta in sorted(PLATA.glob("*_productos.csv")):
+        farmacia = ruta.stem.replace("_productos", "")
+
+        de_farmacia = leer(ruta.name)
+        for f in de_farmacia:
+            f["farmacia"] = farmacia
+            # El identificador solo es unico dentro de cada farmacia
+            f["id_global"] = f"{farmacia}:{f['id_producto']}"
+        productos.extend(de_farmacia)
+        print(f"  {farmacia}: {len(de_farmacia)} productos")
+
+        ruta_precios = PLATA / f"{farmacia}_precios.csv"
+        if ruta_precios.exists():
+            for p in leer(ruta_precios.name):
+                precios[f"{farmacia}:{p['id_producto']}"] = p
 
     filas = []
     discrepancias = []
@@ -301,7 +320,7 @@ def main():
                 }
             )
 
-        precio = precios.get(p["id_producto"], {})
+        precio = precios.get(p["id_global"], {})
         precio_oferta = precio.get("precio_oferta") or ""
 
         # Precio por unidad: es la unica base valida de comparacion, porque
@@ -330,6 +349,8 @@ def main():
         filas.append(
             {
                 "id_producto": p["id_producto"],
+                "id_global": p["id_global"],
+                "farmacia": p["farmacia"],
                 "nombre_publicado": nombre,
                 "marca": p["marca"],
                 "registro_raiz": raiz,
