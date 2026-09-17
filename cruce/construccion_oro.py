@@ -334,15 +334,28 @@ def main():
             except ValueError:
                 pass
 
-        # Clave de equivalencia. Los productos con composicion incompleta
-        # quedan sin clave: agruparlos seria incorrecto.
+        # Clave de equivalencia. Incluye el envase porque dos presentaciones
+        # del mismo medicamento no son comparables si difieren en cantidad:
+        # comparar una caja de 20 con una de 100 daria un ahorro sin sentido
+        # para quien necesita una cantidad determinada.
+        #
+        # Los productos sin envase o con composicion incompleta quedan sin
+        # clave: agruparlos seria incorrecto.
         clave = ""
-        if principios and conc and familia and not composicion_incompleta:
+        if (
+            principios
+            and conc
+            and familia
+            and p["cantidad_envase"]
+            and not composicion_incompleta
+        ):
+            envase = f"{p['cantidad_envase']}{sin_tildes(p['unidad_envase'])}"
             clave = "|".join(
                 [
                     "+".join(sorted(sin_tildes(x) for x in principios)),
                     conc,
                     familia,
+                    envase,
                 ]
             )
 
