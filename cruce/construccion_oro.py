@@ -277,7 +277,16 @@ def main():
         # activo que no esta en la lista, el producto tiene mas de uno y no
         # puede agruparse con el simple
         declarados = {sin_tildes(x) for pr in principios for x in pr.split()}
-        detectados = {t for t in vocabulario if t in sin_tildes(nombre)}
+        # La coincidencia debe ser de palabra completa: "tretinoina" esta
+        # contenido en "isotretinoina" pero son principios activos
+        # distintos, y tomarlo como subcadena hacia parecer combinacion a
+        # un producto simple
+        texto_nombre = sin_tildes(nombre)
+        detectados = {
+            t
+            for t in vocabulario
+            if re.search(r"\b" + re.escape(t) + r"\b", texto_nombre)
+        }
         extra = {t for t in detectados if t not in declarados}
         composicion_incompleta = bool(extra)
 

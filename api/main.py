@@ -201,8 +201,8 @@ def presentacion(clave: str, solo_disponibles: bool = True):
         f"""
         SELECT
             clave_equivalencia,
-            cantidad_envase,
-            unidad_envase,
+            MAX(cantidad_envase)           AS cantidad_envase,
+            MIN(unidad_envase)             AS unidad_envase,
             COUNT(*)                       AS productos,
             COUNT(DISTINCT farmacia)       AS farmacias,
             MIN(precio_oferta)             AS precio_min,
@@ -211,8 +211,8 @@ def presentacion(clave: str, solo_disponibles: bool = True):
         FROM v_productos_vigentes
         WHERE clave_equivalencia LIKE %s
           {filtro_stock}
-        GROUP BY clave_equivalencia, cantidad_envase, unidad_envase
-        ORDER BY cantidad_envase
+        GROUP BY clave_equivalencia
+        ORDER BY MAX(cantidad_envase)
         """,
         (f"{clave}|%",),
     )
