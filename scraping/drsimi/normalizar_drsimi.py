@@ -155,6 +155,44 @@ def extraer_forma(nombre):
             return forma
     return ""
 
+def cargar_vocabulario():
+    """
+    Principios activos del ISP, para reconocerlos dentro del nombre
+    cuando la ficha no publica el campo. Es la misma nomenclatura que
+    usa el normalizador de las demas farmacias.
+    """
+    ruta = SALIDA / "isp_composicion.csv"
+    if not ruta.exists():
+        return set()
+
+    vocabulario = set()
+    with ruta.open(encoding="utf-8") as f:
+        for fila in csv.DictReader(f):
+            p = sin_tildes(fila["principio_activo"])
+            # Los muy cortos generan falsos positivos dentro de otras palabras
+            if len(p) > 5:
+                vocabulario.add(p)
+    return vocabulario
+
+
+def extraer_principio(nombre, vocabulario):
+    """Identifica los principios activos mencionados en el nombre."""
+    texto = sin_tildes(nombre)
+    hallados = [
+        p for p in vocabulario
+        if re.search(r"\b" + re.escape(p) + r"\b", texto)
+    ]
+    if not hallados:
+        return []
+
+    # Descartar los contenidos en otro mas largo: "tretinoina" esta
+    # dentro de "isotretinoina" y solo el segundo es el principio real
+    resultado = []
+    for p in sorted(hallados, key=len, reverse=True):
+        if not any(p in otro for otro in resultado):
+            resultado.append(p)
+    return sorted(resultado)
+
 
 def extraer_concentracion(nombre):
     m = PATRON_CONCENTRACION.search(nombre)
@@ -227,6 +265,8 @@ def main():
     print(f"Leyendo {archivo.name}")
     datos = json.loads(archivo.read_text(encoding="utf-8"))
     fecha = datos.get("fecha_muestreo", "")
+    vocabulario = cargar_vocabulario()
+    print(f"Vocabulario del ISP: {len(vocabulario)} principios activos")
 
     productos = []
     precios = []
@@ -248,6 +288,14 @@ def main():
 
         principio = campo(p, "Principio Activo")
         principio_origen = "campo" if principio else ""
+        # Cuando la ficha no lo trae, se identifica en el nombre con el
+        # vocabulario oficial. Sin esto el producto queda sin clave de
+        # equivalencia y fuera de toda comparacion.
+        if not principio and vocabulario:
+            hallados = extraer_principio(nombre, vocabulario)
+            if hallados:
+                principio = " ".join(hallados).upper()
+                principio_origen = "nombre"
 
         cantidad, unidad = envase(p)
         valor, uni, ref_valor, ref_unidad = extraer_concentracion(nombre)

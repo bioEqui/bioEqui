@@ -61,6 +61,11 @@ FARMACIAS = {
         "tipo": "cadena",
         "url_base": "https://www.cruzverde.cl",
     },
+    "ahumada": {
+        "nombre": "Farmacias Ahumada",
+        "tipo": "cadena",
+        "url_base": "https://www.farmaciasahumada.cl",
+    },
 }
 
 
