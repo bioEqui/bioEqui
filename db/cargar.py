@@ -66,6 +66,11 @@ FARMACIAS = {
         "tipo": "cadena",
         "url_base": "https://www.farmaciasahumada.cl",
     },
+    "profar": {
+        "nombre": "Profar",
+        "tipo": "cadena",
+        "url_base": "https://www.profar.cl", 
+    },
 }
 
 
