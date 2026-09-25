@@ -141,3 +141,26 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Datos del pipeline: no se versionan
+data/bronce/*
+data/plata/*
+data/oro/*
+!data/**/.gitkeep
+
+# Datos crudos sueltos
+*.xls
+*.xlsx
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.ipynb_checkpoints/
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
