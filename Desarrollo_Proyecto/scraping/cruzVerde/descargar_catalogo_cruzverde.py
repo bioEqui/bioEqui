@@ -17,18 +17,18 @@ PAUSA = 2
 MAX_PAGINAS = 100  # Tope de seguridad (5000 productos)
 
 CABECERAS = {
-    "User-Agent": "bioEqui-academico/0.1 (proyecto universitario)",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "es-CL,es-419;q=0.9,es;q=0.8,en;q=0.7",
     "Origin": "https://www.cruzverde.cl",
     "Referer": "https://www.cruzverde.cl/",
-    "sec-ch-ua": '"Chromium";v="152", "Not?A_Brand";v="24", "Google Chrome";v="152"',
+    "sec-ch-ua": '"Chromium";v="154", "Google Chrome";v="154", "Not A(Brand";v="99"',
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": '"Windows"',
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-site",
-    "Cookie": "_ga=GA1.1.26501606.1771881384; visid_incap_3139068=hS8LO6kJRoipTnwtFk+hgRragGoAAAAAQUIPAAAAAABCF9LM+cKL0UYa/Q27tpmU; _fbp=fb.1.1786829337059.4200813829; _gcl_au=1.1.34965926.1786829337; visid_incap_3140215=uxxo6B6HQ2CsDGfoCKVxQhvagGoAAAAAQUIPAAAAAAC+JeOlyqoUrwHJ4GjWFy+L; _tt_enable_cookie=1; _ttp=01M03N7ZHFKTVHEZRM2FS7MRSB_.tt.1; _hjMinimizedPolls=1860980; _hjDonePolls=1860980; _hjSessionUser_1614665=eyJpZCI6IjcyMTBjNTljLTUyNjItNWNmYy1iMzBiLWMzMjJiNGI3ZjMyMiIsImNyZWF0ZWQiOjE3ODY4MjkzMzk5MzcsImV4aXN0aW5nIjp0cnVlfQ==; ttcsid_D0EEUDRC77UCMMV6IDS0=1786829340244::GWfRKXEjA0gL7Y2fFFut.1.1786829499541.1; ttcsid=1786829340245::9ZAHI-tRfHB1RKrd7kC2.1.1786829496491.0::1.153128.154870::99509.20.1149.11176::174091.87.2200; nlbi_3139068=Oc4uebDNd2Dq7nYG2rCdXQAAAAA6guwmvy4loDLUrqCaEwoj; nlbi_3140215=C1JffE7L8h3kqscqxkkkqQAAAABO1OTNQvQkXqP5T175uybf; connect.sid=s%3Acruzverde-65616d67-ff87-44fa-a2c7-e41b22c35cb6.Rsbn46BCGm3OdGNi5wVJrfON3zf8NfE6WTNUqjT7lhc; incap_ses_529_3140215=JrHvMi5xYBVPUWuCuWJXB2KasGoAAAAAoVa4bf2I09NOQ7t+qHTf5w==; incap_ses_529_3139068=CNwCYVCxpymsWWuCuWJXB2iasGoAAAAA4grb2/hWtn+JM7Tf7KXJ2g==; _hjSession_1614665=eyJpZCI6Ijg5YzE0ODhlLTc0ZmMtNGFlNS1iYTEzLWRlNjg4N2Q3Y2FlZSIsImMiOjE3ODk5NTg3NjM4ODMsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MX0=; _ga_GMKXQPNSW5=GS2.1.s1789955741$o7$g1$t1789958830$j58$l0$h440315095; _ga_CVCL=GS2.1.s1789958763$o14$g1$t1789958830$j58$l0$h1795386338"
+    "Cookie": "visid_incap_3139068=oCl8lmZIR+GbyOuLVdTeUcFAn2oAAAAAQUIPAAAAAAA4TMX4NTXmvhAI+01DFLiA; _gcl_au=1.1.1057299671.1788821701; _ga=GA1.1.655145421.1788821701; _fbp=fb.1.1788821701298.1240141483; visid_incap_3140215=heQiUtInSQOY4csNvwAN28RAn2oAAAAAQUIPAAAAAAD5H2AEDr2II3VSlgmHTTnM; _hjSessionUser_1614665=eyJpZCI6ImMyMTRkYmZjLWMyZjItNWJkYi1hMjY1LTg1ODEyYTBjZDEzNSIsImNyZWF0ZWQiOjE3ODg4MjE3MDE0MTUsImV4aXN0aW5nIjp0cnVlfQ==; _ga_GMKXQPNSW5=GS2.1.s1788881652$o2$g1$t1788883731$j60$l0$h2068356593; nlbi_3139068=ioT5ZBZpMjonuxN42rCdXQAAAADdNi9x1+4iv+DQIBjwfDsp; incap_ses_624_3139068=eTg7HFruCDngDsa+uOSoCDiovmoAAAAAkk98+qakFn07Dko9BgNAZg==; _hjSession_1614665=eyJpZCI6IjAwMzE1ZGE4LTFlZDQtNDE5Ny1hZDE0LWJmMWYyYzM1YzRjZiIsImMiOjE3OTA4Nzk4MDEzOTEsInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=; _tt_enable_cookie=1; _ttp=01M3WC285HX9Q24YNRHJ7KJFT2_.tt.1.1790879801521; nlbi_3140215=NYa/QhfjrlGPEH3DxkkkqQAAAADNOA4BnZpaZBvfMfeGFVkb; connect.sid=s%3Acruzverde-f72a80cc-6d79-4262-b3f7-c70df462eaf9.SMvnZwLNH9I5vkLVT5U7TJN2pgNn6Ma%2BcqpMFEb9yIk; byyd_au=1.1.810003273.1790879803; byyd_ga=GA1.1.655145421.1788821701; _ga_CVCL=GS2.1.s1790879801$o5$g1$t1790880412$j60$l0$h343101706; incap_ses_624_3140215=Ha/DUj2gOUiaQ82+uOSoCJyqvmoAAAAAvvVWLGbzXC6Rjzlhr+U46A==; ttcsid_D0EEUDRC77UCMMV6IDS0=1790879801524::17rIIGTQOXODzZRntFUq.1.1790880515796.1; byyd_ga_GMKXQPNSW5=GS2.1.s1790879803$o1$g1$t1790880845$j58$l0$h1503039623; ttcsid=1790879801524::LnCApRUe4uh-KCNassIs.1.1790880515795.0::1.711373.617582::1045565.5.208.7552::1045089.15.7122"
 }
 
 def extraer_medicamentos():
