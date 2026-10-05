@@ -31784,5 +31784,19 @@
   "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw9b34063f/images/products/97962/97962.jpg?sw=1050&sh=1050&sm=fit",
   "precio_ficha": 3990,
   "especificaciones": {}
+ },
+ "75275": {
+  "nombre": "Azitromicina 200 mg/5 ml Polvo Para Suspensión Oral Fco. 15 ml CHILE",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw2e155296/images/products/75275/75275.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 5806,
+  "especificaciones": {
+   "Principio Activo": "AZITROMICINA DIHIDRATO",
+   "Registro Sanitario": "F-14262/24",
+   "Laboratorio": "Chile",
+   "Marca": "Generico",
+   "Concentracion": "200 MG/5ML",
+   "Forma Farmaceutica": "Polvo Para Suspension Oral"
+  }
  }
 }
