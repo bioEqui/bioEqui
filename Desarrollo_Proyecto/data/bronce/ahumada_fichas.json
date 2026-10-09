@@ -31574,5 +31574,229 @@
   "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwb1524a52/images/products/70174/70174.jpg?sw=1050&sh=1050&sm=fit",
   "precio_ficha": 3695,
   "especificaciones": {}
+ },
+ "91937": {
+  "nombre": "Tegovir 500 mg x 42 Comprimidos Recubiertos",
+  "marca": "Tegovir",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw3d9531c6/images/products/91937/91937.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 55419,
+  "especificaciones": {
+   "Principio Activo": "VALACICLOVIR CLORHIDRATO",
+   "Registro Sanitario": "F-24877/24",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Tegovir",
+   "Concentracion": "500 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "65050": {
+  "nombre": "Calmurid Crema 15 g",
+  "marca": "Calmurid",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw898e1ccf/images/products/65050/65050.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 15899,
+  "especificaciones": {
+   "Principio Activo": "HIDROCORTISONA (TOPICA)",
+   "Registro Sanitario": "F-27564/23",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Calmurid",
+   "Concentracion": "1%",
+   "Forma Farmaceutica": "Crema"
+  }
+ },
+ "63973": {
+  "nombre": "Balsan 0,05 % x 30 g Crema Tópica",
+  "marca": "Balsan",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw7dc81147/images/products/63973/63973.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 18521,
+  "especificaciones": {
+   "Principio Activo": "CLOBETASOL PROPIONATO",
+   "Registro Sanitario": "F-12343/22",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Balsan",
+   "Concentracion": "0,05 %",
+   "Forma Farmaceutica": "Crema"
+  }
+ },
+ "87738": {
+  "nombre": "Metotrexato 2.5 mg x 100 Comprimidos MINTLAB CO SA",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw653711bf/images/products/87738/87738.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 23075,
+  "especificaciones": {
+   "Principio Activo": "METOTREXATO",
+   "Registro Sanitario": "F-21881/20",
+   "Laboratorio": "Mintlab Co Sa",
+   "Marca": "Generico",
+   "Concentracion": "2,5 MG",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "4994": {
+  "nombre": "Sandimmun Neoral 25 mg x 50 Cápsulas Blandas",
+  "marca": "Sandimmun",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwed81586c/images/products/4994/4994.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 53294,
+  "especificaciones": {
+   "Principio Activo": "CICLOSPORINA",
+   "Registro Sanitario": "F-25060/24",
+   "Laboratorio": "Novartis",
+   "Marca": "Sandimmun",
+   "Concentracion": "25 MG",
+   "Forma Farmaceutica": "Capsula Blanda"
+  }
+ },
+ "95511": {
+  "nombre": "Sulix Plus 0.4/6 30 Comprimidos Recubiertos",
+  "marca": "Sulix Plus",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw3c96eacf/images/products/95511/95511.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 32799,
+  "especificaciones": {}
+ },
+ "87295": {
+  "nombre": "Carvedilol 6.25 mg x 30 Comprimidos CHILE",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwcb0dd80b/images/products/87295/87295.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 1490,
+  "especificaciones": {
+   "Principio Activo": "CARVEDILOL",
+   "Registro Sanitario": "F-17787/24",
+   "Laboratorio": "Chile",
+   "Marca": "Generico",
+   "Concentracion": "6,25 MG",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "94884": {
+  "nombre": "Tellmi Am 40/5 Mg 30 Comprimidos",
+  "marca": "Tellmi Am",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw142db229/images/products/94884/94884.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 24556,
+  "especificaciones": {
+   "Principio Activo": "TELMISARTAN-AMLODIPINO",
+   "Registro Sanitario": "F-28232",
+   "Laboratorio": "Saval S.A.",
+   "Marca": "Tellmi Am",
+   "Concentracion": "5/40 MG",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "81699": {
+  "nombre": "Quimox 0.5 % x 5 ml Solución Oftálmica",
+  "marca": "Quimox",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwc0ce299c/images/products/81699/81699.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 44709,
+  "especificaciones": {
+   "Principio Activo": "MOXIFLOXACINO CLORHIDRATO",
+   "Registro Sanitario": "F-21672/20",
+   "Laboratorio": "Espec. Oftalm. Suc. Chile Spa",
+   "Marca": "Quimox",
+   "Concentracion": "0,5 %",
+   "Forma Farmaceutica": "Solucion Oftalmica"
+  }
+ },
+ "84203": {
+  "nombre": "Disalot 0.5 % x 5 ml Suspensión Oftálmica",
+  "marca": "Disalot",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwa90f380b/images/products/84203/84203.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 24539,
+  "especificaciones": {
+   "Principio Activo": "LOTEPREDNOL ETABONATO",
+   "Registro Sanitario": "F-21664/20",
+   "Laboratorio": "Espec. Oftalm. Suc. Chile Spa",
+   "Marca": "Disalot",
+   "Concentracion": "0,5 %",
+   "Forma Farmaceutica": "Suspension Oftalmica"
+  }
+ },
+ "90788": {
+  "nombre": "Benelax Ciruela 30 Sachet",
+  "marca": "Benelax Ciruela",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw52160555/images/products/90788/90788.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 20169,
+  "especificaciones": {}
+ },
+ "97160": {
+  "nombre": "Ciruel Balance Pre-Biótico x 30 Sachets",
+  "marca": "Ciruel",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw9582f065/images/products/97160/97160.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 21999,
+  "especificaciones": {}
+ },
+ "5606": {
+  "nombre": "Valcote 125 mg x 20 Comprimidos Recubiertos",
+  "marca": "Valcote",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw90369bf1/images/products/5606/5606.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 11160,
+  "especificaciones": {
+   "Principio Activo": "DIVALPROATO ACIDO DE SODIO",
+   "Registro Sanitario": "F-5276/20",
+   "Laboratorio": "Abbott",
+   "Marca": "Valcote",
+   "Concentracion": "125 MG",
+   "Forma Farmaceutica": "Comprimidos Con Recubrimiento Enterico"
+  }
+ },
+ "90331": {
+  "nombre": "Qurax XR 150 mg 30 Comprimidos Recubiertos de Liberación Prolongada",
+  "marca": "Qurax Xr",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwa865e23b/images/products/90331/90331.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 44079,
+  "especificaciones": {
+   "Principio Activo": "QUETIAPINA HEMIFUMARATO",
+   "Registro Sanitario": "F-24278/23",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Qurax Xr",
+   "Concentracion": "150 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos De Liberacion Prolongada"
+  }
+ },
+ "91741": {
+  "nombre": "Ginseng Plus 90 Cápsulas",
+  "marca": "*Farmacias Ahumada",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw5663d728/images/products/91741/91741.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 3533,
+  "especificaciones": {}
+ },
+ "92935": {
+  "nombre": "Neurok 30Mg 30 Cápsulas",
+  "marca": "Neurok",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw6f551097/images/products/92935/92935.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 61999,
+  "especificaciones": {}
+ },
+ "84365": {
+  "nombre": "Loratadina 10 mg x 30 Comprimidos CHILE",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwadfc2949/images/products/84365/84365.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 1250,
+  "especificaciones": {}
+ },
+ "88341": {
+  "nombre": "Relsed Fexofenadina Clorhidrato 120 mL",
+  "marca": "Relsed",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw7c161349/images/products/88341/88341.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 15034,
+  "especificaciones": {}
+ },
+ "97962": {
+  "nombre": "Caramelos de propóleo BeeVital sabor Frutos del Bosque x 16 unidades",
+  "marca": "BeeVital",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw9b34063f/images/products/97962/97962.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 3990,
+  "especificaciones": {}
+ },
+ "75275": {
+  "nombre": "Azitromicina 200 mg/5 ml Polvo Para Suspensión Oral Fco. 15 ml CHILE",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw2e155296/images/products/75275/75275.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 5806,
+  "especificaciones": {
+   "Principio Activo": "AZITROMICINA DIHIDRATO",
+   "Registro Sanitario": "F-14262/24",
+   "Laboratorio": "Chile",
+   "Marca": "Generico",
+   "Concentracion": "200 MG/5ML",
+   "Forma Farmaceutica": "Polvo Para Suspension Oral"
+  }
  }
 }
