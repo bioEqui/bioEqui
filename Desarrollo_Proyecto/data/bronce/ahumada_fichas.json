@@ -31798,5 +31798,96 @@
    "Concentracion": "200 MG/5ML",
    "Forma Farmaceutica": "Polvo Para Suspension Oral"
   }
+ },
+ "48596": {
+  "nombre": "Folipil 1 mg x 30 Comprimidos Recubiertos",
+  "marca": "Folipil",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw775eb848/images/products/48596/48596.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 32189,
+  "especificaciones": {
+   "Principio Activo": "FINASTERIDA",
+   "Registro Sanitario": "F-15588/21",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Folipil",
+   "Concentracion": "1 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "97295": {
+  "nombre": "Zudenina PB Gel Tópico 30 gr",
+  "marca": "Megalabs",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw1bbd543a/images/products/97295/97295.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 21999,
+  "especificaciones": {}
+ },
+ "91938": {
+  "nombre": "Tegovir 500 mg x 10 Comprimidos Recubiertos",
+  "marca": "Tegovir",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw230b9c09/images/products/91938/91938.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 22939,
+  "especificaciones": {
+   "Principio Activo": "VALACICLOVIR CLORHIDRATO",
+   "Registro Sanitario": "F-24877/24",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Tegovir",
+   "Concentracion": "500 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "2385": {
+  "nombre": "Calmurid 1% Loción Frasco 100 mL",
+  "marca": "Calmurid",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwe06a61a6/images/products/2385/2385.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 24049,
+  "especificaciones": {
+   "Principio Activo": "HIDROCORTISONA",
+   "Registro Sanitario": "F-5921/20",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Calmurid",
+   "Concentracion": "1%",
+   "Forma Farmaceutica": "Locion"
+  }
+ },
+ "40962": {
+  "nombre": "Amobiotic 1 g x 20 Comprimidos Dispersables",
+  "marca": "Amobiotic",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwbab44058/images/products/40962/40962.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 23850,
+  "especificaciones": {
+   "Principio Activo": "AMOXICILINA TRIHIDRATO",
+   "Registro Sanitario": "F-7126/20",
+   "Laboratorio": "Chile",
+   "Marca": "Amobiotic",
+   "Concentracion": "1 GR",
+   "Forma Farmaceutica": "Comprimidos Dispersables"
+  }
+ },
+ "65090": {
+  "nombre": "Cheltin (Hierro) Intravenoso x 1 Ampolla 5 ml",
+  "marca": "Cheltin",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw067f4346/images/products/65090/65090.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 26149,
+  "especificaciones": {
+   "Principio Activo": "COMPLEJO HIDROXIDO FERRICO-SACAROSA",
+   "Registro Sanitario": "F-26031/21",
+   "Laboratorio": "Megalabs Chile S.A",
+   "Marca": "Cheltin",
+   "Concentracion": "100MG/5 ML",
+   "Forma Farmaceutica": "Solucion Inyectable"
+  }
+ },
+ "90800": {
+  "nombre": "Eritrofer 100 mg x 30 Comprimidos Recubiertos",
+  "marca": "Eritrofer",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw467ca3bb/images/products/90800/90800.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 26049,
+  "especificaciones": {
+   "Principio Activo": "COMPLEJO DE HIERRO III HIDROXIDO POLIMALTOSA",
+   "Registro Sanitario": "F-20208/23",
+   "Laboratorio": "Deutsche Pharma",
+   "Marca": "Eritrofer",
+   "Concentracion": "100 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
  }
 }
