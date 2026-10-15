@@ -10,11 +10,11 @@ from pathlib import Path
 import requests
 
 URL_API = "https://api.cruzverde.cl/product-service/products/search"
-DESTINO = Path(__file__).resolve().parents[2] / "data" / "bronce"
+DESTINO = Path(__file__).resolve().parents[2] / "data" / "bronce" 
 
-POR_PAGINA = 50  # Ampliamos el límite por petición para ser más rápidos
-PAUSA = 2
-MAX_PAGINAS = 100  # Tope de seguridad (5000 productos)
+POR_PAGINA = 50  # Límite de petición
+PAUSA = 2  # Pausa entre peticiones para no saturar el servidor
+MAX_PAGINAS = 100  # Tope de seguridad 
 
 CABECERAS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
