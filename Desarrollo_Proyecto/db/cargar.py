@@ -69,7 +69,17 @@ FARMACIAS = {
     "profar": {
         "nombre": "Profar",
         "tipo": "cadena",
-        "url_base": "https://www.profar.cl", 
+        "url_base": "https://www.profar.cl",
+    },
+    "liga": {
+        "nombre": "Farmacia Liga Chilena contra la Epilepsia",
+        "tipo": "fundacion",
+        "url_base": "https://ligafarmacia.cl",
+    },
+    "novasalud": {
+        "nombre": "Farmacias Novasalud",
+        "tipo": "cadena",
+        "url_base": "https://www.novasalud.cl",
     },
 }
 
