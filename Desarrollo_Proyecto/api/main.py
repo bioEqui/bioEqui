@@ -207,7 +207,11 @@ def presentacion(clave: str, solo_disponibles: bool = True):
             COUNT(DISTINCT farmacia)       AS farmacias,
             MIN(precio_oferta)             AS precio_min,
             MAX(precio_oferta)             AS precio_max,
-            BOOL_OR(bioequivalente)        AS hay_bioequivalente
+            BOOL_OR(bioequivalente)        AS hay_bioequivalente,
+            ARRAY_AGG(DISTINCT farmacia)   AS lista_farmacias,
+            -- La imagen de la opcion mas economica que tenga una
+            (ARRAY_AGG(url_imagen ORDER BY precio_oferta)
+                FILTER (WHERE url_imagen <> ''))[1] AS url_imagen
         FROM v_productos_vigentes
         WHERE clave_equivalencia LIKE %s
           {filtro_stock}
@@ -244,11 +248,18 @@ def presentacion(clave: str, solo_disponibles: bool = True):
             }
         )
 
+    precios = [f["precio_min"] for f in filas if f["precio_min"]]
+    imagenes = [f["url_imagen"] for f in filas if f["url_imagen"]]
+
     return {
         "clave_presentacion": clave,
         "principio_activo": principio,
         "concentracion": conc,
         "familia": familia,
+        "precio_desde": min(precios) if precios else None,
+        "farmacias": sorted({x for f in filas for x in f["lista_farmacias"]}),
+        "hay_bioequivalente": any(f["hay_bioequivalente"] for f in filas),
+        "url_imagen": imagenes[0] if imagenes else "",
         "tamanios": tamanios,
     }
 
@@ -335,6 +346,63 @@ def comparar(clave: str, solo_disponibles: bool = True):
         "opciones": len(opciones),
         "ahorro": ahorro,
         "productos": opciones,
+    }
+
+
+@app.get("/historial/{clave:path}")
+def historial(clave: str):
+    """
+    Evolucion del mejor precio de un grupo de equivalencia.
+
+    Cada farmacia se muestrea en dias distintos, asi que tomar el minimo
+    de cada dia haria saltar la serie segun que farmacia se midio ese
+    dia. En su lugar, para cada fecha se considera el ultimo precio
+    conocido de cada producto a esa fecha y se toma el mas bajo: es lo
+    que habria pagado quien comparaba ese dia. Un producto sin stock en
+    su ultima medicion deja de contar, porque ese precio no se podia pagar.
+    """
+    observaciones = consultar(
+        """
+        SELECT h.fecha_muestreo, h.id_producto, h.precio_oferta,
+               h.disponible, p.id_farmacia
+        FROM historico_precios h
+        JOIN productos_farmacia p ON p.id = h.id_producto
+        WHERE p.clave_equivalencia = %s
+          AND h.precio_oferta > 0
+        ORDER BY h.fecha_muestreo
+        """,
+        (clave,),
+    )
+
+    vigentes = {}
+    por_fecha = {}
+    for o in observaciones:
+        if o["disponible"] is False:
+            vigentes.pop(o["id_producto"], None)
+        else:
+            vigentes[o["id_producto"]] = (o["precio_oferta"], o["id_farmacia"])
+
+        # Se sobrescribe hasta procesar la ultima observacion de la fecha
+        if vigentes:
+            por_fecha[o["fecha_muestreo"]] = {
+                "fecha_muestreo": o["fecha_muestreo"],
+                "precio_min": min(p for p, _ in vigentes.values()),
+                "farmacias": len({f for _, f in vigentes.values()}),
+            }
+        else:
+            por_fecha.pop(o["fecha_muestreo"], None)
+
+    filas = list(por_fecha.values())
+    precios = [f["precio_min"] for f in filas]
+
+    return {
+        "clave_equivalencia": clave,
+        "serie": filas,
+        "resumen": {
+            "observaciones": len(filas),
+            "precio_min": min(precios) if precios else None,
+            "precio_max": max(precios) if precios else None,
+        },
     }
 
 
