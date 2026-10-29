@@ -4,31 +4,45 @@ utilizando su API interna descubierta mediante ingeniería inversa.
 """
 
 import json
+import os
+import sys
 import time
 from datetime import date
 from pathlib import Path
 import requests
+from dotenv import load_dotenv
 
 URL_API = "https://api.cruzverde.cl/product-service/products/search"
-DESTINO = Path(__file__).resolve().parents[2] / "data" / "bronce" 
+RAIZ = Path(__file__).resolve().parents[2]
+DESTINO = RAIZ / "data" / "bronce"
+
+# La cookie es de una sesion de navegador: es personal, caduca y no se
+# versiona. Se lee desde el .env (variable CRUZVERDE_COOKIE).
+load_dotenv(RAIZ / ".env")
+COOKIE = os.getenv("CRUZVERDE_COOKIE", "")
+if not COOKIE:
+    sys.exit(
+        "Falta CRUZVERDE_COOKIE en el .env. Copiala desde DevTools > Network "
+        "en cualquier peticion a api.cruzverde.cl."
+    )
 
 POR_PAGINA = 50  # Límite de petición
 PAUSA = 2  # Pausa entre peticiones para no saturar el servidor
 MAX_PAGINAS = 100  # Tope de seguridad 
 
 CABECERAS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "es-CL,es-419;q=0.9,es;q=0.8,en;q=0.7",
     "Origin": "https://www.cruzverde.cl",
     "Referer": "https://www.cruzverde.cl/",
-    "sec-ch-ua": '"Chromium";v="154", "Google Chrome";v="154", "Not A(Brand";v="99"',
+    "sec-ch-ua": '"Google Chrome";v="155", "Chromium";v="155", "Not(A:Brand";v="24"',
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": '"Windows"',
     "sec-fetch-dest": "empty",
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-site",
-    "Cookie": "visid_incap_3139068=oCl8lmZIR+GbyOuLVdTeUcFAn2oAAAAAQUIPAAAAAAA4TMX4NTXmvhAI+01DFLiA; _gcl_au=1.1.1057299671.1788821701; _ga=GA1.1.655145421.1788821701; _fbp=fb.1.1788821701298.1240141483; visid_incap_3140215=heQiUtInSQOY4csNvwAN28RAn2oAAAAAQUIPAAAAAAD5H2AEDr2II3VSlgmHTTnM; _hjSessionUser_1614665=eyJpZCI6ImMyMTRkYmZjLWMyZjItNWJkYi1hMjY1LTg1ODEyYTBjZDEzNSIsImNyZWF0ZWQiOjE3ODg4MjE3MDE0MTUsImV4aXN0aW5nIjp0cnVlfQ==; _tt_enable_cookie=1; _ttp=01M3WC285HX9Q24YNRHJ7KJFT2_.tt.1.1790879801521; byyd_au=1.1.810003273.1790879803; byyd_ga=GA1.1.655145421.1788821701; _ga_GMKXQPNSW5=GS2.1.s1791232846$o3$g0$t1791232846$j60$l0$h1402237444; byyd_au=1.1.810003273.1790879803; byyd_ga_GMKXQPNSW5=GS2.1.s1791232327$o3$g1$t1791232906$j60$l0$h929414941; nlbi_3139068=8LFTA3XD7X1cUXwi2rCdXQAAAADsiW29xdtCgNlxlpiphQGo; incap_ses_529_3139068=zrpNV3HeVQXqljc/vmJXByyBzWoAAAAAikZCVAAzt5Pld53kNeSkZg==; nlbi_3140215=zWi7Nk2D8knpQnnbxkkkqQAAAABqhyCtGGtC9fk+4bufmKlP; incap_ses_529_3140215=+ZoAaTD59Cc4mTc/vmJXBy2BzWoAAAAAaIzW4dZ5vQZCzY+cDrKYlA==; connect.sid=s%3Acruzverde-ac7f1cf9-c16b-42d1-b4b8-1e0f7eb32b7d.xMuQqYfRpeKtNYbcTyzq7HIWd0sllUmnu4klWaw6BS0; _hjSession_1614665=eyJpZCI6IjYwMDFmYTZjLTZmYTUtNDliMy04YzNkLWM0MjQ3OTVlYzBmNSIsImMiOjE3OTE4NTI4NDY4OTksInMiOjAsInIiOjAsInNiIjowLCJzciI6MCwic2UiOjAsImZzIjowLCJzcCI6MH0=; _ga_CVCL=GS2.1.s1791852845$o8$g1$t1791852858$j47$l0$h1207179713; ttcsid_D0EEUDRC77UCMMV6IDS0=1791852847058::1RMZoRpGu8q9qrUYuAn5.3.1791852859257.1; byyd_ga_GMKXQPNSW5=GS2.1.s1791852845$o4$g1$t1791852861$j44$l0$h1265577424; ttcsid=1791852847058::UWBPUO8ZlELxNVpClQv2.3.1791852859257.0::1.10409.11800::18132.5.224.3750::17588.17.3228"
+    "Cookie": COOKIE,
 }
 
 def extraer_medicamentos():

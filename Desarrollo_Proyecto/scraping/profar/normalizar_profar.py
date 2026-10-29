@@ -4,6 +4,7 @@ contra la base de datos PostgreSQL (tabla medicamentos) para máxima precisión.
 """
 
 import csv
+import hashlib
 import json
 import re
 import unicodedata
@@ -109,7 +110,11 @@ def main():
         if not nombre: continue
 
         url_producto = p.get("pdpUrl", "")
-        sku = url_producto.split('/')[-1].replace('.html', '') if url_producto else str(hash(nombre))
+        # El id es el numero final de la URL ("...-x-20-comp-114046.html"):
+        # la URL completa excede el largo de la columna en la base. Sin URL
+        # se usa un hash estable del nombre (hash() cambia en cada ejecucion)
+        m_id = re.search(r"-(\d+)\.html$", url_producto)
+        sku = m_id.group(1) if m_id else "n" + hashlib.md5(nombre.encode("utf-8")).hexdigest()[:12]
 
         principio = ""
         principio_origen = ""
