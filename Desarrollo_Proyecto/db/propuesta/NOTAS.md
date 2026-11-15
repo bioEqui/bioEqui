@@ -19,15 +19,21 @@ Cada cambio está justificado por un dato concreto de la extracción.
 | `fecha_registro` | Viene en los listados del ISP y se estaba descartando. Indica qué tan reciente es la certificación. |
 | `categoria_isp` | Distingue referente, alternativa e híbrido. El booleano solo no captura esa diferencia: un referente no es lo mismo que un producto sin certificación. |
 
-### `registro_sanitario` deja de ser UNIQUE
+### `registro_sanitario` se mantiene UNIQUE
 
-El ISP asigna un mismo registro a varias concentraciones del mismo producto. En
-los datos, las levotiroxinas de 50, 75 y 100 mcg comparten registro sanitario.
-Mantener la restricción haría fallar la carga.
+En el análisis inicial se pensó que el ISP asignaba un mismo registro a varias
+concentraciones (se citaba la levotiroxina de 50, 75 y 100 mcg) y se propuso
+quitar la restricción. **Al verificarlo con los listados actuales no es así**
+(revisado el 15-11-2026): los 4.816 medicamentos tienen registros distintos y
+cada concentración tiene el suyo. Por ejemplo, Eutirox 50 mcg es `F-20860/24`,
+75 mcg es `F-20861/24` y 100 mcg es `F-20858/24`; las 41 levotiroxinas son
+filas distintas.
 
-Cada fila representa entonces una **presentación autorizada**, no un registro. La
-clave es el `id` autoincremental. El control de duplicados se hace en el
-cargador.
+Por eso el esquema mantiene `registro_sanitario` como UNIQUE: cada fila es una
+presentación autorizada y la base tiene las 4.816 filas y las 5.455 de
+composición, sin pérdidas. Si en el futuro el ISP repitiera un registro, la
+carga sobrescribiría esa fila; la clave natural pasaría a ser
+(registro_sanitario, nombre_comercial).
 
 ---
 
