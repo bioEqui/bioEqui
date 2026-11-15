@@ -61,10 +61,55 @@ def extraer_concentracion(texto):
     if ref_unidad: ref_valor = float(m.group(3).replace(",", ".")) if m.group(3) else 1.0
     return valor, unidad, ref_valor, ref_unidad.lower()
 
-def extraer_envase(nombre):
+# Profar abrevia la forma en el nombre ("X 30 COMP. REC.", "X 60 CAPS.").
+# Se expande antes de buscar forma y envase, porque la capa oro solo
+# reconoce las formas escritas completas
+EXPANSIONES = [
+    (r"\bcomp\.?\s*rec\.?\s*lib\.?\s*prol\.?", "comprimidos recubiertos de liberacion prolongada"),
+    (r"\bcomp\.?\s*lib\.?\s*prol\.?", "comprimidos de liberacion prolongada"),
+    (r"\bcomp\.?\s*rec\.?", "comprimidos recubiertos"),
+    (r"\bcomp\.?\s*disp\.?", "comprimidos dispersables"),
+    (r"\bcomp\.?\s*mast\.?", "comprimidos masticables"),
+    (r"\bcomp\.?\s*efer\w*\.?", "comprimidos efervescentes"),
+    (r"\bcomp\b\.?", "comprimidos"),
+    (r"\bcaps\.?\s*bland\w*\.?", "capsulas blandas"),
+    (r"\bcaps\b\.?", "capsulas"),
+    (r"\btabletas?\b", "comprimidos"),
+    (r"\bsusp\.?\s*oral\b", "suspension oral"),
+    (r"\bsol\.?\s*oral\b", "solucion oral"),
+    (r"\bsol\.?\s*iny\w*\.?", "solucion inyectable"),
+    (r"\bsol\.?\s*oft\w*\.?", "solucion oftalmica"),
+    (r"\bsupos?\.?\b", "supositorios"),
+]
+
+# Forma que entrega la API cuando el nombre no la trae
+FORMAS_API = {
+    "comprimido": "comprimidos", "tabletas": "comprimidos", "capsulas": "capsulas",
+    "suspension oral": "suspension oral", "solucion oral": "solucion oral",
+    "solucion inyectable": "solucion inyectable", "jarabe": "jarabe", "crema": "crema",
+    "gotas": "gotas", "polvo": "polvo", "gel": "gel", "unguento": "unguento",
+    "frasco ampolla": "frasco ampolla", "solucion oftalmologica": "solucion oftalmica",
+    "solucion nasal": "solucion nasal", "supositorio": "supositorios", "sachet": "sobres",
+}
+
+PATRON_ML = re.compile(r"\bx\s*(\d+(?:[.,]\d+)?)\s*ml\b")
+
+def expandir(nombre):
     texto = sin_tildes(nombre)
+    for patron, reemplazo in EXPANSIONES:
+        texto = re.sub(patron, reemplazo, texto)
+    return texto
+
+def extraer_envase(nombre):
+    texto = expandir(nombre)
     m = PATRON_UNIDADES.search(texto)
-    if m: return m.group(1), "comprimidos" if m.group(2) == "comp" else m.group(2)
+    if m:
+        unidad = m.group(2)
+        unidad = {"comp": "comprimidos", "comprimido": "comprimidos", "capsula": "capsulas",
+                  "tabletas": "comprimidos", "sobre": "sobres"}.get(unidad, unidad)
+        return m.group(1), unidad
+    m = PATRON_ML.search(texto)
+    if m: return m.group(1).replace(",", "."), "ml"
     return "", ""
 
 def cargar_datos_desde_bd(engine):
@@ -113,13 +158,15 @@ def main():
         # El id es el numero final de la URL ("...-x-20-comp-114046.html"):
         # la URL completa excede el largo de la columna en la base. Sin URL
         # se usa un hash estable del nombre (hash() cambia en cada ejecucion)
+        # La API GraphQL trae el sku, que es el mismo numero de la URL
         m_id = re.search(r"-(\d+)\.html$", url_producto)
-        sku = m_id.group(1) if m_id else "n" + hashlib.md5(nombre.encode("utf-8")).hexdigest()[:12]
+        sku = p.get("sku") or (m_id.group(1) if m_id else "n" + hashlib.md5(nombre.encode("utf-8")).hexdigest()[:12])
+        especificaciones = p.get("especificaciones", {})
 
         principio = ""
         principio_origen = ""
         registro_raiz = ""
-        registro_declarado = p.get("especificaciones", {}).get("Registro ISP", "")
+        registro_declarado = especificaciones.get("Registro ISP", "")
 
         # Limpiar registro (Captura F-, B-, E-)
         if registro_declarado:
@@ -139,7 +186,7 @@ def main():
 
         # ESTRATEGIA 2: Especificaciones explícitas
         if not principio:
-            pa_declarado = p.get("especificaciones", {}).get("Principio Activo", "")
+            pa_declarado = especificaciones.get("Principio Activo", "")
             if pa_declarado:
                 principio = pa_declarado.upper()
                 principio_origen = "ficha_tecnica"
@@ -164,21 +211,24 @@ def main():
                         principio_origen = "nombre_comercial_bd"
                         break # Si encontró un match, dejamos de buscar palabras
 
-        forma = extraer_forma(nombre)
+        forma = extraer_forma(expandir(nombre))
         forma_origen = "nombre" if forma else ""
+        if not forma:
+            forma = FORMAS_API.get(sin_tildes(especificaciones.get("Forma Farmacéutica", "")), "")
+            forma_origen = "api" if forma else ""
         valor, uni, ref_valor, ref_unidad = extraer_concentracion(nombre)
         cantidad, unidad = extraer_envase(nombre)
 
         productos.append({
-            "id_producto": sku, "sku": sku, "nombre_publicado": nombre, "marca": "", 
-            "url_producto": url_producto, "url_imagen": p.get("imageUrl", ""), "ean": "",
+            "id_producto": sku, "sku": sku, "nombre_publicado": nombre, "marca": especificaciones.get("Marca", ""),
+            "url_producto": url_producto, "url_imagen": p.get("imageUrl", ""), "ean": p.get("ean", ""),
             "registro_declarado": registro_declarado, "registro_raiz": registro_raiz,
             "principio_activo": principio, "principio_origen": principio_origen,
             "forma_farmaceutica": forma, "forma_origen": forma_origen,
             "concentracion_valor": valor if valor is not None else "", "concentracion_unidad": uni,
             "referencia_valor": ref_valor if ref_valor is not None else "", "referencia_unidad": ref_unidad,
             "cantidad_envase": cantidad, "unidad_envase": unidad, "clase_producto": "",
-            "bioequivalente_declarado": bool(p.get("isBioequivalent")), "bioequivalente_tipo": "", "condicion_venta": "",
+            "bioequivalente_declarado": bool(p.get("isBioequivalent")), "bioequivalente_tipo": "", "condicion_venta": especificaciones.get("Condición de Venta", ""),
         })
 
         precio_oferta = p.get("price-sale-cl")
@@ -186,7 +236,7 @@ def main():
             precios.append({
                 "id_producto": sku, "fecha_muestreo": fecha,
                 "precio_normal": p.get("price-list-cl") or precio_oferta,
-                "precio_oferta": precio_oferta, "disponible": True, 
+                "precio_oferta": precio_oferta, "disponible": p.get("disponible", True),
             })
 
     SALIDA.mkdir(parents=True, exist_ok=True)

@@ -177,23 +177,33 @@ def extraer_forma(*textos):
     return ""
 
 
-def extraer_envase(texto_producto, precio, fraccionado):
+def extraer_envase(texto_producto, precio_normal, precio_oferta, fraccionado):
     """
     Devuelve cantidad y unidad del envase.
 
     Para los productos que se venden por unidades se contrasta con el
     precio fraccionado. Si el cociente da un entero distinto al del texto,
     manda el cociente: es el que usa la farmacia para cobrar.
+
+    La farmacia calcula el fraccionado sobre el precio NORMAL. Dividir el
+    precio de oferta daba envases falsos en todo producto con descuento:
+    ibuprofeno de 20 comprimidos a $2.480 / $155 = 16. Por eso se prueba
+    primero el precio normal, y si alguno de los cocientes coincide con el
+    texto, el texto se respeta.
     """
     texto = sin_tildes(texto_producto)
 
     m = PATRON_UNIDADES.search(texto)
     if m:
         cantidad, unidad = int(m.group(1)), CONTABLES[m.group(2)]
-        if precio and fraccionado and fraccionado < precio:
-            unidades = precio / fraccionado
-            if abs(unidades - round(unidades)) < 0.05 and round(unidades) > 1:
-                cantidad = round(unidades)
+        cocientes = []
+        for precio in (precio_normal, precio_oferta):
+            if precio and fraccionado and fraccionado < precio:
+                unidades = precio / fraccionado
+                if abs(unidades - round(unidades)) < 0.05 and round(unidades) > 1:
+                    cocientes.append(round(unidades))
+        if cocientes and cantidad not in cocientes:
+            cantidad = cocientes[0]
         return str(cantidad), unidad
 
     # El envase va al final del texto y la concentracion al principio,
@@ -278,6 +288,7 @@ def main():
 
         cantidad, unidad = extraer_envase(
             descripcion,
+            precio_normal,
             precio_oferta,
             numero(campo(atributos, "precio fraccionado")),
         )

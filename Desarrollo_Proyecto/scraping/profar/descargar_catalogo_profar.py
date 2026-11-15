@@ -1,138 +1,185 @@
 """
 Capa bronce: descarga el catálogo completo de medicamentos de Farmacias Profar
-utilizando Web Scraping (BeautifulSoup) sobre el HTML de Magento.
-Incluye navegación a la vista de detalle y Sesión con Reintentos automáticos.
+desde la API GraphQL de Magento (https://profar.cl/graphql).
+
+El listado HTML no sirve: robots.txt prohíbe paginar (/*?p=) y el redirect de
+www a profar.cl descarta el parámetro, así que siempre llegaba la página 1.
+La API entrega todo el catálogo por páginas, con precio, stock, registro ISP,
+principio activo y bioequivalencia, sin abrir la ficha de cada producto.
+
+Se guarda con el mismo formato que usaba el scraper HTML para que
+normalizar_profar.py lo siga leyendo igual.
+
+Uso:
+    python descargar_catalogo_profar.py
 """
 
 import json
 import time
 from datetime import date
 from pathlib import Path
+
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from bs4 import BeautifulSoup
 
 DESTINO = Path(__file__).resolve().parents[2] / "data" / "bronce"
 
-URL_BASE = "https://www.profar.cl/medicamentos.html"
-MAX_PAGINAS = 30  
-PAUSA_PAGINA = 2
-PAUSA_PRODUCTO = 0.5
+URL_API = "https://profar.cl/graphql"
+URL_SITIO = "https://profar.cl/"
+ID_CATEGORIA = "3"  # Medicamentos
+POR_PAGINA = 100
+PAUSA = 2
 
 CABECERAS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "es-CL,es;q=0.9",
+    "User-Agent": "bioEqui-academico/0.1 (proyecto universitario)",
+    "Content-Type": "application/json",
+    "Accept": "application/json",
 }
 
-# Configuración de Sesión con Reintentos (Tolerancia a microcortes de internet)
+# Los atributos propios de Profar no salen en los campos normales del
+# producto: hay que pedirlos con custom_attributesV2. Pedirlos todos de una
+# vez da "Internal server error" en algunos productos, por eso se piden dos
+# grupos que si responden: el de la ficha (registro, principio, venta) y el
+# de los filtros (marca)
+CONSULTA = """
+query ($pagina: Int!, $tamano: Int!) {
+  products(filter: {category_id: {eq: "%s"}}, pageSize: $tamano, currentPage: $pagina) {
+    total_count
+    page_info { total_pages }
+    items {
+      sku
+      name
+      url_key
+      url_suffix
+      stock_status
+      small_image { url }
+      price_range {
+        minimum_price {
+          regular_price { value }
+          final_price { value }
+        }
+      }
+      ficha: custom_attributesV2(filters: {is_html_allowed_on_front: true}) {
+        items {
+          code
+          ... on AttributeValue { value }
+          ... on AttributeSelectedOptions { selected_options { label } }
+        }
+      }
+      filtros: custom_attributesV2(filters: {is_filterable: true}) {
+        items {
+          code
+          ... on AttributeValue { value }
+          ... on AttributeSelectedOptions { selected_options { label } }
+        }
+      }
+    }
+  }
+}
+""" % ID_CATEGORIA
+
+# Nombre con que el scraper HTML guardaba cada atributo de la ficha
+ETIQUETAS = {
+    "registro_isp": "Registro ISP",
+    "principio_activo": "Principio Activo",
+    "condicion_de_venta": "Condición de Venta",
+    "forma_farmaceutica": "Forma Farmacéutica",
+    "marca": "Marca",
+}
+
 session = requests.Session()
-retries = Retry(
-    total=5,  # Reintentar 5 veces en caso de fallo
-    backoff_factor=1,  # Esperar 1s, 2s, 4s, 8s entre reintentos
-    status_forcelist=[429, 500, 502, 503, 504], # Reintentar si el servidor se satura
-    allowed_methods=["GET"]
+reintentos = Retry(
+    total=5,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["POST"],
 )
-session.mount('http://', HTTPAdapter(max_retries=retries))
-session.mount('https://', HTTPAdapter(max_retries=retries))
+session.mount("https://", HTTPAdapter(max_retries=reintentos))
+
+
+def atributos(grupo):
+    """Convierte la lista de custom_attributesV2 en {codigo: texto}."""
+    salida = {}
+    for item in (grupo or {}).get("items") or []:
+        if "selected_options" in item:
+            valor = ", ".join(o["label"] for o in item["selected_options"] or [])
+        else:
+            valor = item.get("value") or ""
+        salida[item["code"]] = valor.strip()
+    return salida
+
+
+def precio(rango, tipo):
+    # Magento guarda el precio neto; price_range ya trae el IVA incluido,
+    # que es el precio que muestra la tienda
+    valor = ((rango or {}).get("minimum_price") or {}).get(tipo, {}).get("value")
+    return round(valor) if valor else None
+
+
+def pedir_pagina(pagina):
+    respuesta = session.post(
+        URL_API,
+        json={"query": CONSULTA, "variables": {"pagina": pagina, "tamano": POR_PAGINA}},
+        headers=CABECERAS,
+        timeout=60,
+    )
+    respuesta.raise_for_status()
+    datos = respuesta.json()
+    if datos.get("errors"):
+        print(f"  aviso en página {pagina}: {datos['errors'][0].get('message')}")
+    return (datos.get("data") or {}).get("products") or {}
+
+
+def convertir(item):
+    ficha = atributos(item.get("ficha"))
+    ficha.update({k: v for k, v in atributos(item.get("filtros")).items() if v})
+
+    especificaciones = {
+        etiqueta: ficha[codigo] for codigo, etiqueta in ETIQUETAS.items() if ficha.get(codigo)
+    }
+
+    return {
+        "sku": item.get("sku"),
+        "productName": item.get("name"),
+        "price-sale-cl": precio(item.get("price_range"), "final_price"),
+        "price-list-cl": precio(item.get("price_range"), "regular_price"),
+        "pdpUrl": f"{URL_SITIO}{item.get('url_key')}{item.get('url_suffix') or '.html'}",
+        "imageUrl": (item.get("small_image") or {}).get("url", ""),
+        "isBioequivalent": ficha.get("bioequivalente") == "1",
+        "disponible": item.get("stock_status") == "IN_STOCK",
+        "ean": ficha.get("ean", ""),
+        "especificaciones": especificaciones,
+    }
+
 
 def extraer_profar():
-    productos_totales = []
-    
-    print("Iniciando extracción masiva de Profar (HTML/Magento)...")
-    print("Protección contra microcortes de red ACTIVADA.")
+    print("Descargando catálogo de Profar desde la API GraphQL...")
+    primera = pedir_pagina(1)
+    total_paginas = (primera.get("page_info") or {}).get("total_pages") or 0
+    print(f"  {primera.get('total_count')} productos en {total_paginas} páginas")
 
-    for pagina in range(1, MAX_PAGINAS + 1):
-        print(f"\nScrapeando página {pagina}...")
-        url_paginada = f"{URL_BASE}?p={pagina}"
-        
-        try:
-            # Usamos la sesión blindada
-            respuesta = session.get(url_paginada, headers=CABECERAS, timeout=20)
-            respuesta.raise_for_status()
-            
-            soup = BeautifulSoup(respuesta.text, 'html.parser')
-            cajas_productos = soup.find_all('div', class_='product-item-info')
-            
-            if not cajas_productos:
-                print(f"No se encontraron más productos en la página {pagina}. Fin del catálogo.")
-                break
-                
-            for caja in cajas_productos:
-                try:
-                    etiqueta_a = caja.find('a', class_='product-item-link')
-                    if not etiqueta_a: continue 
-                        
-                    nombre = etiqueta_a.text.strip()
-                    url_producto = etiqueta_a.get('href', '')
+    productos = {}
+    for pagina in range(1, total_paginas + 1):
+        datos = primera if pagina == 1 else pedir_pagina(pagina)
+        items = [i for i in datos.get("items") or [] if i]
+        for item in items:
+            productos[item["sku"]] = convertir(item)
+        print(f"  página {pagina}/{total_paginas}: {len(items)} productos ({len(productos)} únicos)")
+        if pagina < total_paginas:
+            time.sleep(PAUSA)
 
-                    precio_oferta = None
-                    span_final = caja.find('span', {'data-price-type': 'finalPrice'})
-                    if span_final and span_final.has_attr('data-price-amount'):
-                        precio_oferta = int(float(span_final['data-price-amount']))
+    return list(productos.values()), primera.get("total_count")
 
-                    precio_normal = None
-                    span_old = caja.find('span', {'data-price-type': 'oldPrice'})
-                    if span_old and span_old.has_attr('data-price-amount'):
-                        precio_normal = int(float(span_old['data-price-amount']))
-                    else:
-                        precio_normal = precio_oferta
-
-                    img_tag = caja.find('img', class_='product-image-photo')
-                    url_imagen = img_tag.get('src', '') if img_tag else ""
-
-                    es_bioequivalente = False
-                    div_bio = caja.find('div', class_='bioequivalente')
-                    if div_bio and 'not-bioequivalente' not in div_bio.get('class', []):
-                        es_bioequivalente = True
-
-                    especificaciones = {}
-                    if url_producto:
-                        time.sleep(PAUSA_PRODUCTO)
-                        try:
-                            # Reintento también en el detalle del producto
-                            resp_det = session.get(url_producto, headers=CABECERAS, timeout=15)
-                            if resp_det.status_code == 200:
-                                soup_det = BeautifulSoup(resp_det.text, 'html.parser')
-                                for item in soup_det.find_all('div', class_='pf-spec-item'):
-                                    lbl = item.find('div', class_='pf-spec-label')
-                                    val = item.find('div', class_='pf-spec-value')
-                                    if lbl and val:
-                                        especificaciones[lbl.text.strip()] = val.text.strip()
-                        except Exception as e_det:
-                            print(f"    [!] Fallo final de red al leer detalle de {nombre[:30]}... : {e_det}")
-
-                    productos_totales.append({
-                        "productName": nombre,
-                        "price-sale-cl": precio_oferta,
-                        "price-list-cl": precio_normal,
-                        "pdpUrl": url_producto,
-                        "imageUrl": url_imagen,
-                        "isBioequivalent": es_bioequivalente,
-                        "especificaciones": especificaciones 
-                    })
-                    
-                    print(f"  ✓ {nombre[:40]}... (ISP: {especificaciones.get('Registro ISP', 'No hallado')})")
-
-                except Exception as e:
-                    print(f"    Error parseando un producto: {e}")
-                    continue
-
-            time.sleep(PAUSA_PAGINA)
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Error de red crítico en la página {pagina} después de varios reintentos: {e}")
-            break
-
-    return productos_totales
 
 def main():
-    productos = extraer_profar()
-    
+    productos, esperados = extraer_profar()
+
     if not productos:
         print("No se encontraron productos.")
         return
+    if esperados and len(productos) < esperados:
+        print(f"ATENCION: llegaron {len(productos)} de {esperados} productos")
 
     DESTINO.mkdir(parents=True, exist_ok=True)
     archivo = DESTINO / f"profar_catalogo_{date.today().isoformat()}.json"
@@ -140,7 +187,7 @@ def main():
     archivo.write_text(
         json.dumps(
             {
-                "fuente": "profar.cl",
+                "fuente": "profar.cl/graphql",
                 "categoria_raiz": "medicamentos",
                 "fecha_muestreo": date.today().isoformat(),
                 "total": len(productos),
@@ -152,7 +199,8 @@ def main():
         encoding="utf-8",
     )
 
-    print(f"\n¡Éxito! {len(productos)} productos guardados en: {archivo}")
+    print(f"\n{len(productos)} productos guardados en: {archivo}")
+
 
 if __name__ == "__main__":
     main()

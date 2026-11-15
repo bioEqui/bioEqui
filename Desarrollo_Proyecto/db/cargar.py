@@ -292,7 +292,25 @@ def cargar_productos(cur, farmacias):
             ON CONFLICT (id_farmacia, id_externo) DO UPDATE SET
                 id_medicamento = EXCLUDED.id_medicamento,
                 nombre_publicado = EXCLUDED.nombre_publicado,
+                -- Se actualiza todo lo que sale de plata y oro: si un
+                -- normalizador mejora, el cambio tiene que llegar a la base.
+                -- La foto y el enlace no se borran si la fuente deja de
+                -- traerlos un dia
+                marca = EXCLUDED.marca,
+                url_producto = COALESCE(EXCLUDED.url_producto, productos_farmacia.url_producto),
+                url_imagen = COALESCE(EXCLUDED.url_imagen, productos_farmacia.url_imagen),
+                registro_declarado = EXCLUDED.registro_declarado,
+                registro_raiz = EXCLUDED.registro_raiz,
                 estado_vinculacion = EXCLUDED.estado_vinculacion,
+                forma_farmaceutica = EXCLUDED.forma_farmaceutica,
+                familia = EXCLUDED.familia,
+                via_administracion = EXCLUDED.via_administracion,
+                cantidad_envase = EXCLUDED.cantidad_envase,
+                unidad_envase = EXCLUDED.unidad_envase,
+                condicion_venta = EXCLUDED.condicion_venta,
+                clase_producto = EXCLUDED.clase_producto,
+                bioequivalente_comercial = EXCLUDED.bioequivalente_comercial,
+                composicion_incompleta = EXCLUDED.composicion_incompleta,
                 clave_equivalencia = EXCLUDED.clave_equivalencia
             RETURNING id
             """,
