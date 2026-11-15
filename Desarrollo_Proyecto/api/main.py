@@ -497,7 +497,9 @@ def farmacias():
                 f.codigo,
                 f.nombre,
                 f.url_base,
-                COUNT(p.id)                         AS productos,
+                -- DISTINCT: el join con los precios repite cada producto
+                -- una vez por fecha de muestreo
+                COUNT(DISTINCT p.id)                AS productos,
                 MAX(h.fecha_muestreo)               AS ultima_actualizacion
             FROM farmacias f
             LEFT JOIN productos_farmacia p ON p.id_farmacia = f.id

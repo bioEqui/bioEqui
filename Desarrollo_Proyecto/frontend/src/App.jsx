@@ -926,9 +926,9 @@ function PaginaInicio({ busqueda, cobertura, farmacias }) {
           {cobertura && (
             <p className="cobertura">
               {n(cobertura.productos)} productos de farmacias chilenas,{" "}
-              {n(cobertura.grupos_multiples)} de ellos comparables entre
-              farmacias y verificados contra {n(cobertura.medicamentos_isp)}{" "}
-              registros del ISP.
+              {n(cobertura.grupos_multiples)} medicamentos que puedes comparar
+              entre farmacias y {n(cobertura.medicamentos_isp)} registros del
+              ISP para verificar la bioequivalencia.
             </p>
           )}
           </div>

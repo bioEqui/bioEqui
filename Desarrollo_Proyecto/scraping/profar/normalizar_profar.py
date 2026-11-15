@@ -1,6 +1,18 @@
 """
-Capa plata (Profar): normaliza el catálogo extraído cruzando directamente 
-contra la base de datos PostgreSQL (tabla medicamentos) para máxima precisión.
+Capa plata (Profar): normaliza el catálogo extraído y lo deja con las
+mismas columnas que las demás farmacias.
+
+El principio activo se obtiene, en este orden:
+    1. Por el registro ISP que publica Profar: los principios oficiales de
+       ese registro (data/plata/isp_composicion.csv).
+    2. Por el campo "Principio Activo" de la ficha de Profar.
+    3. Reconociendo dentro del nombre un principio activo del vocabulario
+       oficial del ISP, por palabra completa (igual que Cruz Verde).
+Si ninguno funciona, el producto queda sin principio y no se compara: es
+preferible no comparar a comparar productos distintos.
+
+Como toda la capa plata, lee de bronce y de la plata del ISP; no depende de
+la base de datos.
 """
 
 import csv
@@ -8,9 +20,8 @@ import hashlib
 import json
 import re
 import unicodedata
+from collections import defaultdict
 from pathlib import Path
-import pandas as pd
-from sqlalchemy import create_engine
 
 RAIZ = Path(__file__).resolve().parents[2]
 ENTRADA = RAIZ / "data" / "bronce"
@@ -112,24 +123,43 @@ def extraer_envase(nombre):
     if m: return m.group(1).replace(",", "."), "ml"
     return "", ""
 
-def cargar_datos_desde_bd(engine):
-    """Carga el catálogo oficial completo desde PostgreSQL"""
-    df = pd.read_sql_table('medicamentos', con=engine)
-    mapa_isp = {}
-    
-    for _, row in df.iterrows():
-        # Usamos registro_raiz según la estructura de tu BD
-        reg = str(row['registro_raiz']).strip().upper()
-        # Mapeamos temporalmente el nombre comercial en lugar del principio activo
-        pa = str(row['nombre_comercial']).strip().upper()
-        
-        # Capturar el registro raíz de la BD (F-1234, B-1234, etc.)
-        m = re.search(r'([A-Z]-\d+)', reg)
-        if m and pa and pa.lower() != 'nan':
-            mapa_isp[m.group(1)] = pa
-            
-    df['nombre_clean'] = df['nombre_comercial'].astype(str).str.upper().str.strip()
-    return mapa_isp, df
+def cargar_isp():
+    """
+    Composicion oficial del ISP: los principios activos de cada registro
+    y el vocabulario completo, para reconocerlos dentro de un nombre.
+    """
+    ruta = SALIDA / "isp_composicion.csv"
+    if not ruta.exists():
+        raise SystemExit(f"Falta {ruta}. Ejecuta primero ingesta_isp/normalizacion_isp.py.")
+
+    por_registro = defaultdict(set)
+    vocabulario = set()
+    with ruta.open(encoding="utf-8") as f:
+        for fila in csv.DictReader(f):
+            principio = sin_tildes(fila["principio_activo"])
+            if not principio:
+                continue
+            por_registro[fila["registro_raiz"].strip().upper()].add(principio)
+            # Los nombres muy cortos generan falsos positivos
+            if len(principio) > 5:
+                vocabulario.add(principio)
+    return por_registro, vocabulario
+
+
+def principio_en_nombre(nombre, vocabulario):
+    """
+    Principios activos del ISP mencionados en el nombre, por palabra
+    completa: "tretinoina" no debe reconocerse dentro de "isotretinoina".
+    Si uno esta contenido en otro mas largo, se queda el largo
+    ("acido acetilsalicilico" y no "acido").
+    """
+    texto = expandir(nombre)
+    hallados = [p for p in vocabulario if re.search(r"\b" + re.escape(p) + r"\b", texto)]
+    resultado = []
+    for p in sorted(hallados, key=len, reverse=True):
+        if not any(p in otro for otro in resultado):
+            resultado.append(p)
+    return sorted(resultado)
 
 def main():
     candidatos = sorted(ENTRADA.glob("profar_catalogo_*.json"))
@@ -142,10 +172,8 @@ def main():
     datos = json.loads(archivo.read_text(encoding="utf-8"))
     fecha = datos.get("fecha_muestreo", "")
 
-    # CONEXIÓN A POSTGRESQL (Actualizado al puerto 5433)
-    print("Conectando a PostgreSQL (puerto 5433) para cargar diccionario clínico...")
-    engine = create_engine('postgresql://admin:password123@localhost:5433/bioequi_db')
-    mapa_isp, df_meds = cargar_datos_desde_bd(engine)
+    composicion_isp, vocabulario = cargar_isp()
+    print(f"Vocabulario del ISP: {len(vocabulario)} principios activos")
 
     productos = []
     precios = []
@@ -179,9 +207,9 @@ def main():
                 registro_raiz = match_reg.group(1).upper()
                 registro_declarado = registro_raiz
 
-        # ESTRATEGIA 1: Cruce exacto por Registro ISP contra la BD
-        if registro_raiz and registro_raiz in mapa_isp:
-            principio = mapa_isp[registro_raiz]
+        # ESTRATEGIA 1: principios oficiales del registro ISP declarado
+        if registro_raiz and registro_raiz in composicion_isp:
+            principio = " ".join(sorted(composicion_isp[registro_raiz])).upper()
             principio_origen = "registro_isp"
 
         # ESTRATEGIA 2: Especificaciones explícitas
@@ -191,25 +219,16 @@ def main():
                 principio = pa_declarado.upper()
                 principio_origen = "ficha_tecnica"
 
-        # ESTRATEGIA 3: Cruce inteligente por Nombre Comercial
+        # ESTRATEGIA 3: principio activo del ISP reconocido en el nombre.
+        # Antes se buscaba cualquier palabra del nombre dentro de los nombres
+        # comerciales del ISP y se tomaba el primero: "COMP" esta en casi
+        # todos, asi que se asignaban medicamentos sin relacion y se armaban
+        # comparaciones falsas (Rybelsus agrupado con melatonina).
         if not principio:
-            # Quitamos los símbolos extraños como (REF), *, -, etc.
-            palabras_limpias = [re.sub(r'[^A-Z0-9]', '', w) for w in nombre.upper().split()]
-            palabras_clave = [w for w in palabras_limpias if len(w) > 3]
-            
-            for palabra in palabras_clave:
-                # Evitamos palabras genéricas que causen falsos positivos
-                if palabra in ['PARA', 'COMO', 'FORMA', 'SOBRE', 'MGML']: continue
-                
-                candidatos_bd = df_meds[df_meds['nombre_clean'].str.contains(palabra, regex=False, na=False)]
-                
-                if not candidatos_bd.empty:
-                    # Traemos el NOMBRE COMERCIAL del ISP
-                    pa_encontrado = str(candidatos_bd.iloc[0]['nombre_comercial']).upper()
-                    if pa_encontrado and pa_encontrado.lower() != 'nan':
-                        principio = pa_encontrado
-                        principio_origen = "nombre_comercial_bd"
-                        break # Si encontró un match, dejamos de buscar palabras
+            encontrados = principio_en_nombre(nombre, vocabulario)
+            if encontrados:
+                principio = " ".join(encontrados).upper()
+                principio_origen = "nombre"
 
         forma = extraer_forma(expandir(nombre))
         forma_origen = "nombre" if forma else ""
@@ -250,14 +269,16 @@ def main():
     con_reg = sum(1 for x in productos if x["registro_raiz"])
     con_pri = sum(1 for x in productos if x["principio_activo"])
     origen_isp = sum(1 for x in productos if x["principio_origen"] == "registro_isp")
-    origen_bd = sum(1 for x in productos if x["principio_origen"] == "nombre_comercial_bd")
+    origen_ficha = sum(1 for x in productos if x["principio_origen"] == "ficha_tecnica")
+    origen_nombre = sum(1 for x in productos if x["principio_origen"] == "nombre")
 
     print(f"\n{total} productos normalizados")
     print(f"  con registro ISP detectado:  {con_reg:4} ({100*con_reg/total if total else 0:.1f}%)")
-    print(f"  vinculados exitosamente:     {con_pri:4} ({100*con_pri/total if total else 0:.1f}%)")
-    print(f"  -> cruzados por código ISP:  {origen_isp:4} ({100*origen_isp/total if total else 0:.1f}%)")
-    print(f"  -> cruzados por nombre BD:   {origen_bd:4} ({100*origen_bd/total if total else 0:.1f}%)")
-    print(f"\n¡Archivos CSV generados en data/plata listos para subir a la BD!")
+    print(f"  con principio activo:        {con_pri:4} ({100*con_pri/total if total else 0:.1f}%)")
+    print(f"  -> por registro ISP:         {origen_isp:4} ({100*origen_isp/total if total else 0:.1f}%)")
+    print(f"  -> por ficha de Profar:      {origen_ficha:4} ({100*origen_ficha/total if total else 0:.1f}%)")
+    print(f"  -> reconocido en el nombre:  {origen_nombre:4} ({100*origen_nombre/total if total else 0:.1f}%)")
+    print(f"\nGuardado en {SALIDA}")
 
 if __name__ == "__main__":
     main()
