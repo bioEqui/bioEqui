@@ -32190,5 +32190,26 @@
   "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw027e3e35/images/products/98744/98744.jpg?sw=1050&sh=1050&sm=fit",
   "precio_ficha": 32469,
   "especificaciones": {}
+ },
+ "98716": {
+  "nombre": "Clavspring 875/125 20C",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwef4d8f2e/images/products/98716/98716.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 27499,
+  "especificaciones": {}
+ },
+ "9896": {
+  "nombre": "Fluanxol Depot 20Mg. Caja 1 Ampolla 1Ml.",
+  "marca": "Fluanxol",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw9d135540/images/products/9896/9896.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 33132,
+  "especificaciones": {
+   "Principio Activo": "FLUPENTIXOL",
+   "Registro Sanitario": "F-11498/11",
+   "Laboratorio": "Lundbeck",
+   "Marca": "Fluanxol",
+   "Concentracion": "20MG/VIAL",
+   "Forma Farmaceutica": "Ampolla"
+  }
  }
 }
