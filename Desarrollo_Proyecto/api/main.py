@@ -366,7 +366,7 @@ def historial(clave: str):
         SELECT h.fecha_muestreo, h.id_producto, h.precio_oferta,
                h.disponible, p.id_farmacia
         FROM historico_precios h
-        JOIN productos_farmacia p ON p.id = h.id_producto
+        JOIN v_productos p ON p.id = h.id_producto
         WHERE p.clave_equivalencia = %s
           AND h.precio_oferta > 0
         ORDER BY h.fecha_muestreo
@@ -423,7 +423,7 @@ def producto(id_producto: int):
         """
         SELECT fecha_muestreo, precio_normal, precio_oferta,
                precio_unitario, disponible
-        FROM historico_precios
+        FROM v_historico_precios
         WHERE id_producto = %s
         ORDER BY fecha_muestreo
         """,
@@ -519,9 +519,8 @@ def estadisticas():
             (SELECT COUNT(*) FROM medicamentos)         AS medicamentos_isp,
             (SELECT COUNT(*) FROM principios_activos)   AS principios_activos,
             (SELECT COUNT(*) FROM productos_farmacia)   AS productos,
-            (SELECT COUNT(DISTINCT clave_equivalencia)
-             FROM productos_farmacia
-             WHERE clave_equivalencia IS NOT NULL)      AS grupos,
+            (SELECT COUNT(DISTINCT id_grupo)
+             FROM productos_farmacia)                   AS grupos,
             (SELECT COUNT(DISTINCT fecha_muestreo)
              FROM historico_precios)                    AS fechas_muestreo
         """

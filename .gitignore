@@ -164,3 +164,6 @@ venv/
 .vscode/
 .idea/
 .DS_Store
+
+# Respaldos locales de la base (pg_dump)
+respaldos/
