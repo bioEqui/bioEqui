@@ -126,6 +126,24 @@ def url_producto(nombre, product_id):
     return f"https://www.cruzverde.cl//{n}/{product_id}.html"
 
 
+def imagen(p):
+    """
+    Foto del producto.
+
+    La API mezcla dos formatos: los productos patrocinados traen imageUrl,
+    y los resultados normales (casi todo el catalogo) traen la foto en
+    image.link. Algunos solo traen la galeria images.
+    """
+    if p.get("imageUrl"):
+        return p["imageUrl"]
+    if (p.get("image") or {}).get("link"):
+        return p["image"]["link"]
+    for i in p.get("images") or []:
+        if i.get("link"):
+            return i["link"]
+    return ""
+
+
 def extraer_forma(nombre):
     comparable = sin_tildes(nombre)
     for forma in FORMAS:
@@ -266,7 +284,7 @@ def main():
                 "nombre_publicado": nombre,
                 "marca": limpiar(p.get("productBrand")),
                 "url_producto": p.get("pdpUrl") or url_producto(nombre, pid),
-                "url_imagen": p.get("imageUrl") or "",
+                "url_imagen": imagen(p),
                 "ean": "",
                 # Esta fuente no publica registro sanitario: la vinculacion
                 # al ISP no es posible por esa via

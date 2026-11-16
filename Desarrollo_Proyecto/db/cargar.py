@@ -14,6 +14,12 @@ no unicamente los que estan a la venta en una cadena.
 La carga es idempotente. Medicamentos y productos se actualizan si ya
 existen; los precios se acumulan, porque conforman la serie temporal.
 
+El esquema esta en tercera forma normal (db/propuesta/init_v3.sql): la
+forma farmaceutica, la categoria del ISP y el grupo de equivalencia se
+guardan una vez en su tabla y se referencian por id. Lo derivado (familia,
+via, clave de equivalencia, precio unitario) no se guarda: lo calculan
+las vistas.
+
 Requiere un archivo .env en la raiz con:
     DB_HOST=localhost
     DB_PORT=5433
@@ -38,6 +44,11 @@ from dotenv import load_dotenv
 RAIZ = Path(__file__).resolve().parents[1]
 PLATA = RAIZ / "data" / "plata"
 ORO = RAIZ / "data" / "oro"
+
+# La familia y la via de cada forma se definen con la misma regla que usa
+# la capa oro, para que no puedan diferir
+sys.path.insert(0, str(RAIZ / "cruce"))
+from construccion_oro import clasificar  # noqa: E402
 
 load_dotenv(RAIZ / ".env")
 
@@ -136,10 +147,61 @@ def fecha(valor):
     return None
 
 
-def cargar_medicamentos(cur):
+class Formas:
+    """
+    Id de cada forma farmaceutica. Crea la forma la primera vez que
+    aparece, con su familia y via.
+    """
+
+    def __init__(self, cur):
+        self.cur = cur
+        cur.execute("SELECT nombre, id FROM formas_farmaceuticas")
+        self.ids = dict(cur.fetchall())
+
+    def id(self, nombre):
+        nombre = texto(nombre)
+        if not nombre:
+            return None
+        if nombre not in self.ids:
+            familia, via = clasificar(nombre)
+            self.cur.execute(
+                """
+                INSERT INTO formas_farmaceuticas (nombre, familia, via_administracion)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (nombre) DO UPDATE SET nombre = EXCLUDED.nombre
+                RETURNING id
+                """,
+                (nombre, familia or None, via or None),
+            )
+            self.ids[nombre] = self.cur.fetchone()[0]
+        return self.ids[nombre]
+
+
+def cargar_categorias(cur, medicamentos):
+    """Cada listado del ISP con la condicion de bioequivalencia que implica."""
+    categorias = {}
+    for m in medicamentos:
+        bio = booleano(m["es_bioequivalente"])
+        if texto(m["categoria_isp"]) and bio is not None:
+            categorias[m["categoria_isp"].strip()] = bio
+
+    for codigo, bio in categorias.items():
+        cur.execute(
+            """
+            INSERT INTO categorias_isp (codigo, es_bioequivalente)
+            VALUES (%s, %s)
+            ON CONFLICT (codigo) DO UPDATE SET es_bioequivalente = EXCLUDED.es_bioequivalente
+            """,
+            (codigo, bio),
+        )
+
+
+def cargar_medicamentos(cur, formas):
     """Catalogo oficial del ISP, con su composicion."""
     medicamentos = leer(PLATA / "isp_medicamentos.csv")
     composicion = leer(PLATA / "isp_composicion.csv")
+
+    cargar_categorias(cur, medicamentos)
 
     # Los principios activos primero: son referenciados por composicion
     principios = sorted({c["principio_activo"] for c in composicion if c["principio_activo"]})
@@ -167,26 +229,24 @@ def cargar_medicamentos(cur):
         cur.execute(
             """
             INSERT INTO medicamentos (
-                registro_sanitario, registro_raiz, nombre_comercial,
-                laboratorio, forma_farmaceutica, fecha_registro,
-                categoria_isp, es_bioequivalente
+                registro_sanitario, nombre_comercial, laboratorio,
+                id_forma, fecha_registro, categoria_isp
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (registro_sanitario) DO UPDATE SET
                 nombre_comercial = EXCLUDED.nombre_comercial,
                 laboratorio = EXCLUDED.laboratorio,
-                es_bioequivalente = EXCLUDED.es_bioequivalente
+                id_forma = EXCLUDED.id_forma,
+                categoria_isp = EXCLUDED.categoria_isp
             RETURNING id
             """,
             (
                 m["registro_sanitario"],
-                m["registro_raiz"],
                 m["nombre_comercial"],
                 texto(m["laboratorio"]),
-                texto(m["forma_farmaceutica"]),
+                formas.id(m["forma_farmaceutica"]),
                 fecha(m["fecha_registro"]),
                 texto(m["categoria_isp"]),
-                booleano(m["es_bioequivalente"]),
             ),
         )
         # Se indexa por raiz para poder vincular la composicion
@@ -252,13 +312,51 @@ def cargar_farmacias(cur):
     return dict(cur.fetchall())
 
 
-def cargar_productos(cur, farmacias):
+def id_grupo(cur, grupos, clave):
+    """
+    Id del grupo de equivalencia de una clave de texto
+    (principio|concentracion|familia|envase); lo crea si no existe.
+    """
+    clave = texto(clave)
+    if not clave:
+        return None
+    if clave not in grupos:
+        partes = clave.split("|")
+        cur.execute(
+            """
+            INSERT INTO grupos_equivalencia (principio_activo, concentracion, familia, envase)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (principio_activo, concentracion, familia, envase)
+                DO UPDATE SET envase = EXCLUDED.envase
+            RETURNING id
+            """,
+            partes,
+        )
+        grupos[clave] = cur.fetchone()[0]
+    return grupos[clave]
+
+
+def cargar_productos(cur, farmacias, formas):
     """Productos comerciales ya cruzados y validados."""
     productos = leer(ORO / "productos_enriquecidos.csv")
 
-    # Mapa de raiz a id de medicamento, para resolver la vinculacion
-    cur.execute("SELECT registro_raiz, MIN(id) FROM medicamentos GROUP BY registro_raiz")
+    # Mapa de raiz a id de medicamento, para resolver la vinculacion. La
+    # raiz no se guarda: es el registro sin el sufijo del anio
+    cur.execute(
+        "SELECT split_part(registro_sanitario, '/', 1), MIN(id) "
+        "FROM medicamentos GROUP BY 1"
+    )
     id_medicamento = dict(cur.fetchall())
+
+    # Medicamentos que ya tienen forma oficial: sus productos no la repiten
+    cur.execute("SELECT id FROM medicamentos WHERE id_forma IS NOT NULL")
+    con_forma = {mid for (mid,) in cur.fetchall()}
+
+    cur.execute(
+        "SELECT principio_activo || '|' || concentracion || '|' || familia "
+        "|| '|' || envase, id FROM grupos_equivalencia"
+    )
+    grupos = dict(cur.fetchall())
 
     insertados = 0
     vinculados = 0
@@ -277,46 +375,60 @@ def cargar_productos(cur, farmacias):
             if mid:
                 vinculados += 1
 
+        # La forma de la farmacia solo se guarda si no hay una oficial
+        id_forma = None if mid in con_forma else formas.id(p["forma_farmaceutica"])
+
         cur.execute(
             """
             INSERT INTO productos_farmacia (
-                id_farmacia, id_medicamento, id_externo, nombre_publicado,
-                marca, url_producto, url_imagen, registro_declarado,
-                registro_raiz, estado_vinculacion, forma_farmaceutica,
-                familia, via_administracion, cantidad_envase, unidad_envase,
-                condicion_venta, clase_producto, bioequivalente_comercial,
-                composicion_incompleta, clave_equivalencia
+                id_farmacia, id_medicamento, id_grupo, id_forma, id_externo,
+                nombre_publicado, marca, url_producto, url_imagen,
+                registro_declarado, estado_vinculacion, cantidad_envase,
+                unidad_envase, condicion_venta, clase_producto,
+                bioequivalente_comercial, composicion_incompleta
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (id_farmacia, id_externo) DO UPDATE SET
                 id_medicamento = EXCLUDED.id_medicamento,
+                id_grupo = EXCLUDED.id_grupo,
+                id_forma = EXCLUDED.id_forma,
                 nombre_publicado = EXCLUDED.nombre_publicado,
+                -- Se actualiza todo lo que sale de plata y oro: si un
+                -- normalizador mejora, el cambio tiene que llegar a la base.
+                -- La foto y el enlace no se borran si la fuente deja de
+                -- traerlos un dia
+                marca = EXCLUDED.marca,
+                url_producto = COALESCE(EXCLUDED.url_producto, productos_farmacia.url_producto),
+                url_imagen = COALESCE(EXCLUDED.url_imagen, productos_farmacia.url_imagen),
+                registro_declarado = EXCLUDED.registro_declarado,
                 estado_vinculacion = EXCLUDED.estado_vinculacion,
-                clave_equivalencia = EXCLUDED.clave_equivalencia
+                cantidad_envase = EXCLUDED.cantidad_envase,
+                unidad_envase = EXCLUDED.unidad_envase,
+                condicion_venta = EXCLUDED.condicion_venta,
+                clase_producto = EXCLUDED.clase_producto,
+                bioequivalente_comercial = EXCLUDED.bioequivalente_comercial,
+                composicion_incompleta = EXCLUDED.composicion_incompleta
             RETURNING id
             """,
             (
                 id_farmacia,
                 mid,
+                id_grupo(cur, grupos, p["clave_equivalencia"]),
+                id_forma,
                 p.get("id_global") or p["id_producto"],
                 p["nombre_publicado"],
                 texto(p["marca"]),
                 texto(p["url_producto"]),
                 texto(p["url_imagen"]),
                 texto(p["registro_raiz"]),
-                texto(p["registro_raiz"]),
                 p["estado_vinculacion"],
-                texto(p["forma_farmaceutica"]),
-                texto(p["familia"]),
-                texto(p["via_administracion"]),
                 num(p["cantidad_envase"]),
                 texto(p["unidad_envase"]),
                 texto(p["condicion_venta"]),
                 texto(p["clase_producto"]),
                 booleano(p["bioequivalente_comercial"]),
                 booleano(p["composicion_incompleta"]) or False,
-                texto(p["clave_equivalencia"]),
             ),
         )
         ids[p.get("id_global") or p["id_producto"]] = cur.fetchone()[0]
@@ -342,23 +454,23 @@ def cargar_precios(cur, ids, productos):
                 p.get("fecha_muestreo") or None,
                 entero(p["precio_normal"]),
                 entero(p["precio_oferta"]),
-                num(p["precio_unitario"]),
                 booleano(p["disponible"]),
             )
         )
 
+    # El precio unitario no se guarda: lo calculan las vistas a partir
+    # del precio y del envase del producto
     execute_batch(
         cur,
         """
         INSERT INTO historico_precios (
             id_producto, fecha_muestreo, precio_normal,
-            precio_oferta, precio_unitario, disponible
+            precio_oferta, disponible
         )
-        VALUES (%s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (id_producto, fecha_muestreo) DO UPDATE SET
             precio_normal = EXCLUDED.precio_normal,
             precio_oferta = EXCLUDED.precio_oferta,
-            precio_unitario = EXCLUDED.precio_unitario,
             disponible = EXCLUDED.disponible
         """,
         filas,
@@ -400,8 +512,10 @@ def main():
                 # Se recarga el catalogo completo en cada ejecucion. Los
                 # precios no se tocan: solo se acumulan.
 
+                formas = Formas(cur)
+
                 print("Cargando catalogo del ISP...")
-                n_med, n_pri, n_com = cargar_medicamentos(cur)
+                n_med, n_pri, n_com = cargar_medicamentos(cur, formas)
                 print(f"  {n_med} medicamentos")
                 print(f"  {n_pri} principios activos")
                 print(f"  {n_com} filas de composicion")
@@ -410,7 +524,7 @@ def main():
                 farmacias = cargar_farmacias(cur)
 
                 print("Cargando productos...")
-                n_prod, n_vinc, ids = cargar_productos(cur, farmacias)
+                n_prod, n_vinc, ids = cargar_productos(cur, farmacias, formas)
                 print(f"  {n_prod} productos")
                 print(f"  {n_vinc} vinculados al catalogo oficial")
 

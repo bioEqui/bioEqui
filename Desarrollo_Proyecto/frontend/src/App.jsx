@@ -37,9 +37,10 @@ const NOMBRE_FAMILIA = {
 };
 
 /* ---------------------------------------------------------
-   El sello amarillo distingue lo certificado por el ISP de
-   lo que solo declara la farmacia. No es lo mismo y el
-   usuario debe poder notarlo.
+   El sello amarillo imita el que llevan las cajas de los
+   medicamentos bioequivalentes en Chile. Se reserva para lo
+   certificado por el ISP; lo que solo declara la farmacia va
+   en el color de la marca, para que no se confundan.
    --------------------------------------------------------- */
 function SelloBio({ valor, fuente }) {
   if (!valor) return null;
@@ -55,8 +56,8 @@ function SelloBio({ valor, fuente }) {
           : "Bioequivalencia declarada por la farmacia, sin verificar contra el registro del ISP"
       }
     >
-      <span className="punto" />
-      {certificado ? "Bioequivalente ISP" : "Bioequivalente según farmacia"}
+      {certificado && <span className="sello-be" aria-hidden="true">BE</span>}
+      {certificado ? "Bioequivalente certificado ISP" : "Bioequivalente según la farmacia"}
     </span>
   );
 }
@@ -94,12 +95,13 @@ function marcasEje(maximo, cantidad = 4) {
   return marcas;
 }
 
-const ALTO = 260;
+const ALTO = 240;
 const MARGEN = { arriba: 16, derecha: 16, abajo: 32, izquierda: 64 };
 
-function GraficoHistorial({ serie }) {
+// serie: [{ fecha, precio, nota }] ordenada por fecha
+function GraficoHistorial({ serie, descripcion }) {
   const contenedor = useRef(null);
-  const [ancho, setAncho] = useState(640);
+  const [ancho, setAncho] = useState(480);
   const [foco, setFoco] = useState(null);
 
   // El SVG se dibuja al ancho real para que el texto no se deforme
@@ -112,10 +114,10 @@ function GraficoHistorial({ serie }) {
   }, []);
 
   const tiempos = serie.map((p) => {
-    const [a, m, d] = p.fecha_muestreo.split("-").map(Number);
+    const [a, m, d] = p.fecha.split("-").map(Number);
     return Date.UTC(a, m - 1, d);
   });
-  const marcas = marcasEje(Math.max(...serie.map((p) => p.precio_min)));
+  const marcas = marcasEje(Math.max(...serie.map((p) => p.precio)));
   const tope = marcas[marcas.length - 1];
 
   const interior = ancho - MARGEN.izquierda - MARGEN.derecha;
@@ -124,7 +126,7 @@ function GraficoHistorial({ serie }) {
   const x = (i) => MARGEN.izquierda + ((tiempos[i] - t0) / rango) * interior;
   const y = (v) => MARGEN.arriba + (1 - v / tope) * (ALTO - MARGEN.arriba - MARGEN.abajo);
 
-  const trazo = serie.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.precio_min)}`).join(" ");
+  const trazo = serie.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.precio)}`).join(" ");
 
   // Etiquetas del eje x: primera, ultima y las intermedias que no se
   // encimen. Se mide en pixeles porque las fechas no son equidistantes
@@ -157,7 +159,7 @@ function GraficoHistorial({ serie }) {
         width={ancho}
         height={ALTO}
         role="img"
-        aria-label={`Mejor precio entre ${fechaLarga(serie[0].fecha_muestreo)} y ${fechaLarga(serie[serie.length - 1].fecha_muestreo)}`}
+        aria-label={`${descripcion}, entre el ${fechaLarga(serie[0].fecha)} y el ${fechaLarga(serie[ultima].fecha)}`}
         onPointerMove={alMover}
         onPointerLeave={() => setFoco(null)}
       >
@@ -182,13 +184,17 @@ function GraficoHistorial({ serie }) {
             className="grafico-eje"
             x={x(i)}
             y={ALTO - 8}
-            textAnchor={i === 0 ? "start" : i === serie.length - 1 ? "end" : "middle"}
+            textAnchor={i === 0 ? "start" : i === ultima ? "end" : "middle"}
           >
-            {fechaCorta(serie[i].fecha_muestreo)}
+            {fechaCorta(serie[i].fecha)}
           </text>
         ))}
 
         <path className="grafico-linea" d={trazo} />
+
+        {serie.map((p, i) => (
+          <circle key={p.fecha} className="grafico-marca" cx={x(i)} cy={y(p.precio)} r={2.5} />
+        ))}
 
         {punto && (
           <g>
@@ -199,7 +205,7 @@ function GraficoHistorial({ serie }) {
               y1={MARGEN.arriba}
               y2={ALTO - MARGEN.abajo}
             />
-            <circle className="grafico-punto" cx={x(foco)} cy={y(punto.precio_min)} r={5} />
+            <circle className="grafico-punto" cx={x(foco)} cy={y(punto.precio)} r={5} />
           </g>
         )}
       </svg>
@@ -209,105 +215,175 @@ function GraficoHistorial({ serie }) {
           className="grafico-tooltip"
           style={{
             left: Math.min(Math.max(x(foco), 90), ancho - 90),
-            top: y(punto.precio_min),
+            top: y(punto.precio),
           }}
         >
-          <strong>{pesos(punto.precio_min)}</strong>
-          <span>{fechaLarga(punto.fecha_muestreo)}</span>
-          <span>
-            {punto.farmacias} {punto.farmacias === 1 ? "farmacia" : "farmacias"} con precio
-          </span>
+          <strong>{pesos(punto.precio)}</strong>
+          <span>{fechaLarga(punto.fecha)}</span>
+          {punto.nota && <span>{punto.nota}</span>}
         </div>
       )}
     </div>
   );
 }
 
-function Historial({ clave }) {
-  const [datos, setDatos] = useState(null);
+/* --------------------- Historial de precios --------------------- */
+
+// Valor especial del selector para la serie de todo el grupo
+const MERCADO = "mercado";
+
+// Las dos fuentes entregan formatos distintos; se llevan al mismo
+// { fecha, precio, nota } que dibuja el grafico
+function serieMercado(datos) {
+  return datos.serie.map((p) => ({
+    fecha: p.fecha_muestreo,
+    precio: p.precio_min,
+    nota: `${p.farmacias} ${p.farmacias === 1 ? "farmacia" : "farmacias"} con precio`,
+  }));
+}
+
+function serieProducto(datos) {
+  return datos.historial
+    .filter((h) => h.precio_oferta > 0)
+    .map((h) => ({
+      fecha: h.fecha_muestreo,
+      precio: h.precio_oferta,
+      nota:
+        h.disponible === false
+          ? "Sin stock ese día"
+          : h.descuento_pct
+            ? `En oferta, antes ${pesos(h.precio_normal)}`
+            : null,
+    }));
+}
+
+function Historial({ clave, productos, seleccion, alCambiar }) {
+  const [serie, setSerie] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    setDatos(null);
+    setSerie(null);
     setError(null);
 
-    fetch(ruta("historial", clave))
+    const url =
+      seleccion === MERCADO ? ruta("historial", clave) : `${API}/producto/${seleccion}`;
+
+    fetch(url)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(setDatos)
+      .then((d) => setSerie(seleccion === MERCADO ? serieMercado(d) : serieProducto(d)))
       .catch(() => setError("No se pudo cargar el historial de precios."));
-  }, [clave]);
+  }, [clave, seleccion]);
 
-  if (error) return <p className="aviso">{error}</p>;
-  if (!datos) return <p className="aviso">Cargando historial…</p>;
+  const elegido = productos.find((p) => p.id === seleccion);
+  const descripcion = elegido
+    ? `Precio en ${elegido.farmacia}`
+    : "Precio más bajo entre todas las farmacias";
 
-  const serie = datos.serie;
-  if (serie.length < 2) {
-    return (
+  let contenido;
+  if (error) {
+    contenido = <p className="aviso">{error}</p>;
+  } else if (!serie) {
+    contenido = <p className="aviso">Cargando historial…</p>;
+  } else if (serie.length < 2) {
+    contenido = (
       <p className="aviso">
-        Todavía hay una sola medición de precio para este envase. El gráfico
-        aparecerá cuando se acumulen más fechas.
+        Todavía hay una sola medición de precio
+        {elegido ? ` en ${elegido.farmacia}` : ""}
+        {serie.length === 1 && `: ${pesos(serie[0].precio)} el ${fechaLarga(serie[0].fecha)}`}.
+        El gráfico aparecerá cuando se acumulen más fechas.
+        {elegido && (
+          <button className="enlace" onClick={() => alCambiar(MERCADO)}>
+            Ver el precio más bajo entre farmacias
+          </button>
+        )}
       </p>
+    );
+  } else {
+    const precios = serie.map((p) => p.precio);
+    const primero = precios[0];
+    const ultimo = precios[precios.length - 1];
+    const cambio = primero ? Math.round((100 * (ultimo - primero)) / primero) : 0;
+
+    contenido = (
+      <>
+        <dl className="historial-cifras">
+          <div>
+            <dt>Último precio</dt>
+            <dd>{pesos(ultimo)}</dd>
+          </div>
+          <div>
+            <dt>Mínimo</dt>
+            <dd>{pesos(Math.min(...precios))}</dd>
+          </div>
+          <div>
+            <dt>Máximo</dt>
+            <dd>{pesos(Math.max(...precios))}</dd>
+          </div>
+          <div>
+            <dt>Desde el {fechaCorta(serie[0].fecha)}</dt>
+            <dd className={cambio > 0 ? "sube" : cambio < 0 ? "baja" : ""}>
+              {cambio > 0 ? "+" : cambio < 0 ? "−" : ""}
+              {Math.abs(cambio)}%
+            </dd>
+          </div>
+        </dl>
+
+        <GraficoHistorial serie={serie} descripcion={descripcion} />
+
+        <details className="historial-tabla">
+          <summary>Ver los datos en una tabla</summary>
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Precio</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              {serie.map((p) => (
+                <tr key={p.fecha}>
+                  <td>{fechaLarga(p.fecha)}</td>
+                  <td>{pesos(p.precio)}</td>
+                  <td>{p.nota || ""}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      </>
     );
   }
 
-  const primero = serie[0].precio_min;
-  const ultimo = serie[serie.length - 1].precio_min;
-  const cambio = primero ? Math.round((100 * (ultimo - primero)) / primero) : 0;
-
   return (
     <div className="historial">
-      <div className="historial-cifras">
-        <div>
-          <span>Hoy</span>
-          <strong>{pesos(ultimo)}</strong>
-        </div>
-        <div>
-          <span>Mínimo</span>
-          <strong>{pesos(datos.resumen.precio_min)}</strong>
-        </div>
-        <div>
-          <span>Máximo</span>
-          <strong>{pesos(datos.resumen.precio_max)}</strong>
-        </div>
-        <div>
-          <span>Desde el {fechaCorta(serie[0].fecha_muestreo)}</span>
-          <strong className={cambio > 0 ? "sube" : cambio < 0 ? "baja" : ""}>
-            {cambio > 0 ? "▲" : cambio < 0 ? "▼" : "="} {Math.abs(cambio)}%
-          </strong>
-        </div>
-      </div>
+      <label className="historial-selector">
+        <span>Ver el historial de</span>
+        <select
+          value={seleccion}
+          onChange={(e) =>
+            alCambiar(e.target.value === MERCADO ? MERCADO : Number(e.target.value))
+          }
+        >
+          <option value={MERCADO}>El precio más bajo entre farmacias</option>
+          {productos.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.farmacia}, {pesos(p.precio_oferta)}: {p.nombre_publicado}
+            </option>
+          ))}
+        </select>
+      </label>
 
-      <GraficoHistorial serie={serie} />
-
-      <details className="historial-tabla">
-        <summary>Ver los datos en una tabla</summary>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Mejor precio</th>
-              <th>Farmacias con precio</th>
-            </tr>
-          </thead>
-          <tbody>
-            {serie.map((p) => (
-              <tr key={p.fecha_muestreo}>
-                <td>{fechaLarga(p.fecha_muestreo)}</td>
-                <td>{pesos(p.precio_min)}</td>
-                <td>{p.farmacias}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </details>
+      {contenido}
     </div>
   );
 }
 
-/* --------------------- Tarjeta de presentación --------------------- */
+/* --------------------- Tarjeta de resultado --------------------- */
 
 function Tarjeta({ datos, href }) {
   const envases = datos.envases || [];
+  const familia = NOMBRE_FAMILIA[datos.familia] || datos.familia;
 
   return (
     <a className="tarjeta" href={href}>
@@ -320,117 +396,166 @@ function Tarjeta({ datos, href }) {
       </figure>
 
       <div className="tarjeta-cuerpo">
-        <div className="principio">{capitalizar(datos.principio_activo)}</div>
-        <div className="dosis">
-          {legibleConcentracion(datos.concentracion)}
-          {datos.familia && ` · ${NOMBRE_FAMILIA[datos.familia] || datos.familia}`}
-        </div>
-
-        {datos.hay_bioequivalente && (
-          <div className="tarjeta-sello">
-            <span className="sello-bio declarado">
-              <span className="punto" />
-              Hay bioequivalentes
-            </span>
-          </div>
-        )}
+        <h3 className="principio">
+          {capitalizar(datos.principio_activo)} {legibleConcentracion(datos.concentracion)}
+        </h3>
+        {familia && <p className="dosis">{capitalizar(familia)}</p>}
 
         <div className="tarjeta-pie">
           <div>
-            <div className="desde">Desde</div>
-            <div className="precio-principal">{pesos(datos.precio_desde)}</div>
+            <span className="desde">Desde</span>
+            <span className="precio-principal">{pesos(datos.precio_desde)}</span>
           </div>
-          <div className="donde">
+          <p className="donde">
             {envases.length === 1
-              ? `${envases[0]} unidades`
-              : `${envases.length} presentaciones`}
+              ? `Envase de ${envases[0]}`
+              : `${envases.length} tamaños de envase`}
             <br />
-            {datos.farmacias.length === 1 ? "1 farmacia" : `${datos.farmacias.length} farmacias`}
-          </div>
+            {datos.farmacias.length === 1
+              ? "En 1 farmacia"
+              : `En ${datos.farmacias.length} farmacias`}
+          </p>
         </div>
 
-        <span className="tarjeta-accion">Ver precios e historial →</span>
+        {datos.hay_bioequivalente && (
+          <p className="tarjeta-nota">Tiene opciones bioequivalentes</p>
+        )}
       </div>
     </a>
   );
 }
 
-/* --------------------- Comparación entre farmacias --------------------- */
+/* --------------------- Opciones de compra + historial --------------------- */
 
-function Comparacion({ clave }) {
+function Presentacion({ clave, tamanio }) {
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState(null);
+  const [seleccion, setSeleccion] = useState(null);
+  const panelHistorial = useRef(null);
 
   useEffect(() => {
     setDatos(null);
     setError(null);
+    setSeleccion(null);
 
     fetch(ruta("comparar", clave))
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(setDatos)
+      .then((d) => {
+        setDatos(d);
+        // Se parte por la serie de todo el grupo: siempre tiene mas
+        // fechas que cualquier farmacia por separado
+        setSeleccion(MERCADO);
+      })
       .catch(() => setError("No se pudieron cargar las opciones."));
   }, [clave]);
 
+  function elegir(id) {
+    setSeleccion(id);
+    // En pantallas angostas el grafico queda abajo de la lista: se
+    // lleva la vista hasta el para que se note el cambio
+    if (window.matchMedia("(max-width: 900px)").matches) {
+      panelHistorial.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
   if (error) return <p className="aviso">{error}</p>;
-  if (!datos) return <p className="aviso">Cargando opciones…</p>;
+  if (!datos || seleccion == null) return <p className="aviso">Cargando opciones…</p>;
 
   return (
-    <>
-      {datos.ahorro && datos.ahorro.monto > 0 && (
-        <div className="resumen-ahorro">
-          Entre la opción más económica y la más cara hay{" "}
-          <strong>{pesos(datos.ahorro.monto)} de diferencia</strong>, un{" "}
-          {datos.ahorro.porcentaje}% sobre el mismo medicamento y la misma
-          cantidad.
-        </div>
-      )}
+    <div className="columnas">
+      <section className="bloque">
+        <h2 className="paso">Dónde comprarlo</h2>
+        <p className="paso-ayuda">
+          {tamanio && `Envase de ${tamanio.cantidad_envase} ${tamanio.unidad_envase}, `}
+          del más barato al más caro. Elige una farmacia para ver cómo ha
+          cambiado su precio.
+        </p>
 
-      <div className="opciones">
-        {datos.productos.map((p, i) => (
-          <article key={p.id} className={`opcion ${i === 0 ? "mejor" : ""}`}>
-            <div>
-              {i === 0 && <span className="etiqueta-mejor">Mejor precio</span>}
-              <div className="opcion-nombre">{p.nombre_publicado}</div>
+        {datos.ahorro && datos.ahorro.monto > 0 && (
+          <p className="resumen-ahorro">
+            Entre la opción más barata y la más cara hay{" "}
+            <strong>{pesos(datos.ahorro.monto)} de diferencia</strong> por el
+            mismo medicamento y la misma cantidad.
+          </p>
+        )}
 
-              <div className="opcion-meta">
-                <span className="farmacia">{p.farmacia}</span>
-                {p.condicion_venta && <span>{capitalizar(p.condicion_venta.toLowerCase())}</span>}
-                {p.fecha_muestreo && <span>Precio al {p.fecha_muestreo}</span>}
-                <SelloBio valor={p.bioequivalente} fuente={p.bioequivalente_fuente} />
-              </div>
-
-              {p.url_producto && (
-                <a
-                  className="ir"
-                  href={p.url_producto}
-                  target="_blank"
-                  rel="noopener noreferrer"
+        <ul className="opciones">
+          {datos.productos.map((p, i) => {
+            const activa = seleccion === p.id;
+            return (
+              <li
+                key={p.id}
+                className={`opcion${i === 0 ? " mejor" : ""}${activa ? " activa" : ""}`}
+              >
+                <button
+                  className="opcion-elegir"
+                  aria-pressed={activa}
+                  onClick={() => elegir(p.id)}
                 >
-                  Ver en {p.farmacia}
-                </a>
-              )}
+                  <span className="opcion-foto" aria-hidden="true">
+                    {p.url_imagen && <img src={p.url_imagen} alt="" loading="lazy" />}
+                  </span>
 
-              {p.nombre_oficial && (
-                <div className="oficial">
-                  Registro sanitario: {p.nombre_oficial}
-                  {p.laboratorio_oficial && ` · ${p.laboratorio_oficial}`}
+                  <span className="opcion-texto">
+                    <span className="opcion-farmacia">
+                      {p.farmacia}
+                      {i === 0 && <span className="etiqueta-mejor">Más barato</span>}
+                    </span>
+                    <span className="opcion-nombre">{p.nombre_publicado}</span>
+                    {p.condicion_venta && (
+                      <span className="opcion-meta">
+                        {capitalizar(p.condicion_venta.toLowerCase())}
+                      </span>
+                    )}
+                  </span>
+
+                  <span className="opcion-precio">
+                    <span className="precio">{pesos(p.precio_oferta)}</span>
+                    {p.en_oferta && (
+                      <span className="precio-antes">{pesos(p.precio_normal)}</span>
+                    )}
+                    {p.precio_unitario && (
+                      <span className="unitario">{pesos(p.precio_unitario)} c/u</span>
+                    )}
+                  </span>
+                </button>
+
+                <div className="opcion-pie">
+                  <SelloBio valor={p.bioequivalente} fuente={p.bioequivalente_fuente} />
+                  {p.url_producto && (
+                    <a
+                      className="ir"
+                      href={p.url_producto}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Ver en {p.farmacia}
+                    </a>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="opcion-precio">
-              <div className="precio">{pesos(p.precio_oferta)}</div>
-              {p.en_oferta && (
-                <div className="precio-antes">{pesos(p.precio_normal)}</div>
-              )}
-              {p.precio_unitario && (
-                <div className="unitario">{pesos(p.precio_unitario)} por unidad</div>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
-    </>
+                {p.nombre_oficial && (
+                  <p className="oficial">
+                    Registro ISP: {p.nombre_oficial}
+                    {p.laboratorio_oficial && `, ${p.laboratorio_oficial}`}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      <section className="bloque bloque-historial" ref={panelHistorial}>
+        <h2 className="paso">Precio en el tiempo</h2>
+        <Historial
+          clave={clave}
+          productos={datos.productos}
+          seleccion={seleccion}
+          alCambiar={setSeleccion}
+        />
+      </section>
+    </div>
   );
 }
 
@@ -512,7 +637,7 @@ function PaginaMedicamento({ clave, hayBusqueda }) {
   return (
     <main className="envoltorio pagina-medicamento">
       <a className="volver" href="#/" onClick={volver}>
-        ← {hayBusqueda ? "Volver a los resultados" : "Buscar otro medicamento"}
+        {hayBusqueda ? "Volver a los resultados" : "Buscar otro medicamento"}
       </a>
 
       {error && <p className="aviso">{error}</p>}
@@ -536,30 +661,21 @@ function PaginaMedicamento({ clave, hayBusqueda }) {
               <p className="detalle-bajada">
                 {capitalizar(NOMBRE_FAMILIA[datos.familia] || datos.familia)}
               </p>
-              <div className="detalle-datos">
-                <span>
-                  Desde <strong>{pesos(datos.precio_desde)}</strong>
-                </span>
-                <span>
-                  {datos.farmacias.length}{" "}
-                  {datos.farmacias.length === 1 ? "farmacia" : "farmacias"}
-                </span>
-                {datos.hay_bioequivalente && (
-                  <span className="sello-bio declarado">
-                    <span className="punto" />
-                    Hay bioequivalentes
-                  </span>
-                )}
-              </div>
+              <p className="detalle-datos">
+                Desde <strong>{pesos(datos.precio_desde)}</strong> en{" "}
+                {datos.farmacias.length}{" "}
+                {datos.farmacias.length === 1 ? "farmacia" : "farmacias"}
+                {datos.hay_bioequivalente && ", con opciones bioequivalentes"}
+              </p>
             </div>
           </header>
 
-          <section className="bloque">
+          <section className="tamanios-bloque">
             <h2 className="paso">¿Qué cantidad necesitas?</h2>
             <p className="paso-ayuda">
               Los precios solo se comparan entre envases del mismo tamaño.
             </p>
-            <div className="tamanios">
+            <div className="tamanios" role="group" aria-label="Tamaño del envase">
               {datos.tamanios.map((t) => (
                 <button
                   key={t.clave_equivalencia}
@@ -567,39 +683,19 @@ function PaginaMedicamento({ clave, hayBusqueda }) {
                   aria-pressed={elegido === t.clave_equivalencia}
                   onClick={() => setElegido(t.clave_equivalencia)}
                 >
-                  <div className="tamanio-cantidad">
+                  <span className="tamanio-cantidad">
                     {t.cantidad_envase} {t.unidad_envase}
-                  </div>
-                  <div className="tamanio-dato">
-                    {pesos(t.precio_min)}
-                    {t.farmacias > 1 && ` · ${t.farmacias} farmacias`}
-                  </div>
+                  </span>
+                  <span className="tamanio-dato">
+                    desde {pesos(t.precio_min)}
+                    {t.farmacias > 1 && `, ${t.farmacias} farmacias`}
+                  </span>
                 </button>
               ))}
             </div>
           </section>
 
-          {elegido && (
-            <div className="columnas">
-              <section className="bloque">
-                <h2 className="paso">Dónde comprarlo</h2>
-                <p className="paso-ayuda">
-                  {tamanio && `Envase de ${tamanio.cantidad_envase} ${tamanio.unidad_envase}, `}
-                  ordenado del más barato al más caro.
-                </p>
-                <Comparacion clave={elegido} />
-              </section>
-
-              <section className="bloque">
-                <h2 className="paso">Precio histórico</h2>
-                <p className="paso-ayuda">
-                  El precio más bajo disponible entre todas las farmacias en
-                  cada fecha de medición.
-                </p>
-                <Historial clave={elegido} />
-              </section>
-            </div>
-          )}
+          {elegido && <Presentacion clave={elegido} tamanio={tamanio} />}
         </>
       )}
     </main>
@@ -608,63 +704,242 @@ function PaginaMedicamento({ clave, hayBusqueda }) {
 
 /* --------------------- Página de inicio --------------------- */
 
-function PaginaInicio({ busqueda, cobertura }) {
+// Caso real que se muestra en la portada. Si algun dia deja de existir
+// en la base, el panel simplemente no aparece
+const EJEMPLO = "losartan|50.0mg|solido_oral|30comprimidos";
+const EJEMPLO_PRESENTACION = "losartan|50.0mg|solido_oral";
+
+// "Farmacias Cruz Verde" -> "Cruz Verde"; los nombres completos no caben
+// junto a una barra
+const farmaciaCorta = (nombre) =>
+  nombre
+    .replace(/^Farmacias? (del )?/i, "")
+    .replace(/ Chilena contra la Epilepsia/i, "");
+
+// La marca es lo que distingue una fila de otra: "Cozaar 50 mg x 30..." -> "Cozaar"
+const marcaCorta = (nombre) => {
+  const primera = (nombre || "").split(/\s+/)[0] || "";
+  return capitalizar(primera.toLowerCase());
+};
+
+function EjemploPrecios() {
+  const [datos, setDatos] = useState(null);
+
+  useEffect(() => {
+    fetch(ruta("comparar", EJEMPLO))
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(setDatos)
+      .catch(() => {});
+  }, []);
+
+  if (!datos || datos.productos.length < 2) return null;
+
+  const filas = datos.productos.slice(0, 7);
+  const maximo = Math.max(...filas.map((p) => p.precio_oferta));
+  const fecha = filas[0].fecha_muestreo;
+
+  return (
+    <a className="ejemplo" href={enlaceMedicamento(EJEMPLO_PRESENTACION)}>
+      <h2 className="ejemplo-titulo">Losartán 50 mg, caja de 30 comprimidos</h2>
+      <p className="ejemplo-bajada">
+        El mismo medicamento en distintas farmacias
+        {fecha && `, precios al ${fechaLarga(fecha)}`}.
+      </p>
+
+      <ul className="barras">
+        {filas.map((p, i) => (
+          <li
+            key={p.id}
+            className={i === 0 ? "barra-fila mas-barato" : "barra-fila"}
+            title={`${p.farmacia}: ${p.nombre_publicado}, ${pesos(p.precio_oferta)}`}
+          >
+            <span className="barra-nombre">
+              <span>{farmaciaCorta(p.farmacia)}</span>
+              <span className="barra-marca">{marcaCorta(p.nombre_publicado)}</span>
+            </span>
+            <span className="barra-pista">
+              <span
+                className="barra-relleno"
+                style={{ width: `${Math.max(2, (100 * p.precio_oferta) / maximo)}%` }}
+              />
+            </span>
+            <span className="barra-precio">{pesos(p.precio_oferta)}</span>
+          </li>
+        ))}
+      </ul>
+
+      {datos.ahorro && (
+        <p className="ejemplo-pie">
+          Elegir bien ahorra hasta <strong>{pesos(datos.ahorro.monto)}</strong> en
+          una sola caja.
+          <span className="ejemplo-enlace">Ver la comparación completa</span>
+        </p>
+      )}
+    </a>
+  );
+}
+
+const PASOS = [
+  {
+    titulo: "Busca el medicamento",
+    texto: "Escribe el nombre comercial o el principio activo, por ejemplo losartán o ibuprofeno.",
+  },
+  {
+    titulo: "Elige la dosis y el envase",
+    texto:
+      "Solo comparamos productos con el mismo principio activo, la misma dosis y la misma cantidad.",
+  },
+  {
+    titulo: "Compara y revisa el historial",
+    texto: "Mira qué farmacia lo vende más barato hoy y cómo ha cambiado su precio.",
+  },
+];
+
+function Informacion({ farmacias }) {
+  const actualizacion = farmacias
+    ?.map((f) => f.ultima_actualizacion)
+    .filter(Boolean)
+    .sort()
+    .pop();
+
+  return (
+    <div className="informacion">
+      <section className="seccion">
+        <h2 className="seccion-titulo">Cómo funciona</h2>
+        <ol className="pasos">
+          {PASOS.map((p) => (
+            <li key={p.titulo}>
+              <h3>{p.titulo}</h3>
+              <p>{p.texto}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="seccion bioeq">
+        <div className="bioeq-texto">
+          <h2 className="seccion-titulo">¿Qué es un medicamento bioequivalente?</h2>
+          <p>
+            Es un medicamento que demostró ante el Instituto de Salud Pública
+            (ISP) que actúa en el organismo igual que el original: mismo
+            principio activo, misma dosis y mismo efecto. Por eso puedes cambiar
+            una marca por otra más barata.
+          </p>
+          <p className="bioeq-nota">
+            Antes de cambiar un medicamento, consulta con tu médico o con el
+            químico farmacéutico.
+          </p>
+        </div>
+
+        <dl className="bioeq-tipos">
+          <div>
+            <dt>
+              <span className="sello-be grande" aria-hidden="true">BE</span>
+              Bioequivalente certificado ISP
+            </dt>
+            <dd>
+              Comprobamos el registro sanitario del producto contra el registro
+              oficial del ISP.
+            </dd>
+          </div>
+          <div>
+            <dt>Bioequivalente según la farmacia</dt>
+            <dd>
+              La farmacia lo declara, pero no pudimos comprobarlo en el registro
+              del ISP.
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      {farmacias?.length > 0 && (
+        <section className="seccion">
+          <h2 className="seccion-titulo">Farmacias que comparamos</h2>
+          {actualizacion && (
+            <p className="seccion-bajada">
+              Precios actualizados al {fechaLarga(actualizacion)}.
+            </p>
+          )}
+          <ul className="farmacias">
+            {farmacias.map((f) => (
+              <li key={f.codigo}>
+                <a href={f.url_base} target="_blank" rel="noopener noreferrer">
+                  {f.nombre}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function PaginaInicio({ busqueda, cobertura, farmacias }) {
   const { consulta, setConsulta, resultados, buscando, error, buscar } = busqueda;
+  const n = (v) => v.toLocaleString("es-CL");
+  const sinBusqueda = !resultados && !buscando && !error;
 
   return (
     <>
       <section className="portada">
         <div className="portada-contenido">
-          <span className="portada-etiqueta">Mismo medicamento, mejor precio</span>
+          <div className="portada-texto">
           <h1>¿Qué medicamento necesitas?</h1>
           <p className="portada-bajada">
-            Busca por nombre o principio activo y compara entre farmacias el
-            precio del mismo medicamento, en la misma dosis y cantidad.
+            Busca por nombre o principio activo y compara el precio del mismo
+            medicamento, en la misma dosis y cantidad, entre farmacias.
           </p>
 
-          <div className="buscador">
-            <span className="buscador-icono" aria-hidden="true">⌕</span>
+          <form
+            className="buscador"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              buscar();
+            }}
+          >
+            <svg className="buscador-icono" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <line x1="15.5" y1="15.5" x2="21" y2="21" />
+            </svg>
             <input
               value={consulta}
               onChange={(e) => setConsulta(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && buscar()}
-              placeholder="Ej: paracetamol, losartán, omeprazol…"
+              placeholder="Ej: paracetamol, losartán, omeprazol"
               aria-label="Buscar medicamento"
             />
-            <button onClick={() => buscar()} disabled={consulta.trim().length < 3}>
+            <button type="submit" disabled={consulta.trim().length < 3}>
               Buscar
             </button>
-          </div>
+          </form>
 
           <div className="sugerencias">
-            <span>Búsquedas frecuentes:</span>
+            <span>Prueba con</span>
             {["paracetamol", "ibuprofeno", "omeprazol", "losartan"].map((t) => (
-              <button key={t} onClick={() => buscar(t)}>
+              <button key={t} type="button" onClick={() => buscar(t)}>
                 {t}
               </button>
             ))}
           </div>
 
           {cobertura && (
-            <div className="cifras">
-              <div>
-                <strong>{cobertura.productos.toLocaleString("es-CL")}</strong>
-                <span>productos</span>
-              </div>
-              <div>
-                <strong>{cobertura.grupos_multiples.toLocaleString("es-CL")}</strong>
-                <span>comparables entre farmacias</span>
-              </div>
-              <div>
-                <strong>{cobertura.medicamentos_isp.toLocaleString("es-CL")}</strong>
-                <span>medicamentos del ISP</span>
-              </div>
-            </div>
+            <p className="cobertura">
+              {n(cobertura.productos)} productos de farmacias chilenas,{" "}
+              {n(cobertura.grupos_multiples)} medicamentos que puedes comparar
+              entre farmacias y {n(cobertura.medicamentos_isp)} registros del
+              ISP para verificar la bioequivalencia.
+            </p>
           )}
+          </div>
+
+          <EjemploPrecios />
         </div>
       </section>
 
-      <main className="envoltorio">
+      {sinBusqueda && <Informacion farmacias={farmacias} />}
+
+      <main className={sinBusqueda ? "envoltorio vacio" : "envoltorio"}>
         {error && (
           <p className="aviso">
             <strong>No hay conexión con el servidor</strong>
@@ -689,7 +964,7 @@ function PaginaInicio({ busqueda, cobertura }) {
                 {resultados.total === 1 ? "presentación" : "presentaciones"} de{" "}
                 {resultados.consulta}
               </h2>
-              <p>Elige una para ver precios e historial</p>
+              <p>Elige una para comparar precios</p>
             </div>
 
             <div className="rejilla">
@@ -717,11 +992,16 @@ export default function App() {
   const [buscando, setBuscando] = useState(false);
   const [error, setError] = useState(null);
   const [cobertura, setCobertura] = useState(null);
+  const [farmacias, setFarmacias] = useState(null);
 
   useEffect(() => {
     fetch(`${API}/estadisticas`)
       .then((r) => r.json())
       .then(setCobertura)
+      .catch(() => {});
+    fetch(`${API}/farmacias`)
+      .then((r) => r.json())
+      .then((d) => setFarmacias(d.farmacias))
       .catch(() => {});
   }, []);
 
@@ -755,10 +1035,10 @@ export default function App() {
     <>
       <header className="barra">
         <a className="marca" href="#/">
-          <span className="marca-icono" aria-hidden="true">+</span>
-          bio<span>equi</span>
+          <span className="marca-icono" aria-hidden="true" />
+          BioEqui
         </a>
-        <div className="barra-lema">Compara precios de medicamentos en Chile</div>
+        <span className="barra-lema">Compara precios de medicamentos en Chile</span>
       </header>
 
       {rutaActual.pagina === "medicamento" ? (
@@ -766,20 +1046,21 @@ export default function App() {
       ) : (
         <PaginaInicio
           cobertura={cobertura}
+          farmacias={farmacias}
           busqueda={{ consulta, setConsulta, resultados, buscando, error, buscar }}
         />
       )}
 
       <footer className="pie">
         <p>
-          Los precios corresponden a la fecha de muestreo indicada en cada
-          producto y pueden haber cambiado. BioEqui no vende medicamentos: los
-          enlaces llevan al sitio de cada farmacia.
+          Los precios corresponden a la fecha de medición indicada y pueden
+          haber cambiado. BioEqui no vende medicamentos: los enlaces llevan al
+          sitio de cada farmacia.
         </p>
         <p>
           La información es referencial y no reemplaza la indicación de un
-          profesional de la salud. Existen medicamentos en los que la
-          sustitución requiere supervisión médica.
+          profesional de la salud. En algunos medicamentos la sustitución
+          requiere supervisión médica.
         </p>
       </footer>
     </>

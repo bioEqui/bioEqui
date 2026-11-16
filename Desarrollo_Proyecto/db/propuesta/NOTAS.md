@@ -19,15 +19,21 @@ Cada cambio está justificado por un dato concreto de la extracción.
 | `fecha_registro` | Viene en los listados del ISP y se estaba descartando. Indica qué tan reciente es la certificación. |
 | `categoria_isp` | Distingue referente, alternativa e híbrido. El booleano solo no captura esa diferencia: un referente no es lo mismo que un producto sin certificación. |
 
-### `registro_sanitario` deja de ser UNIQUE
+### `registro_sanitario` se mantiene UNIQUE
 
-El ISP asigna un mismo registro a varias concentraciones del mismo producto. En
-los datos, las levotiroxinas de 50, 75 y 100 mcg comparten registro sanitario.
-Mantener la restricción haría fallar la carga.
+En el análisis inicial se pensó que el ISP asignaba un mismo registro a varias
+concentraciones (se citaba la levotiroxina de 50, 75 y 100 mcg) y se propuso
+quitar la restricción. **Al verificarlo con los listados actuales no es así**
+(revisado el 15-11-2026): los 4.816 medicamentos tienen registros distintos y
+cada concentración tiene el suyo. Por ejemplo, Eutirox 50 mcg es `F-20860/24`,
+75 mcg es `F-20861/24` y 100 mcg es `F-20858/24`; las 41 levotiroxinas son
+filas distintas.
 
-Cada fila representa entonces una **presentación autorizada**, no un registro. La
-clave es el `id` autoincremental. El control de duplicados se hace en el
-cargador.
+Por eso el esquema mantiene `registro_sanitario` como UNIQUE: cada fila es una
+presentación autorizada y la base tiene las 4.816 filas y las 5.455 de
+composición, sin pérdidas. Si en el futuro el ISP repitiera un registro, la
+carga sobrescribiría esa fila; la clave natural pasaría a ser
+(registro_sanitario, nombre_comercial).
 
 ---
 
@@ -128,3 +134,38 @@ pipeline.
   tablas sin cambiar la lógica de inserción.
 - La contraseña está en el `docker-compose.yml`, que se versiona. Para desarrollo
   local está bien; antes de desplegar debe moverse al `.env`.
+
+---
+
+# Esquema v3: tercera forma normal (15-11-2026)
+
+El esquema v2 cumplía primera y segunda forma normal, pero no tercera: guardaba
+datos que dependen de otro dato que no es la clave (dependencias transitivas).
+El v3 (`init_v3.sql`) los separa en tablas propias o los calcula en las vistas.
+
+| Dependencia transitiva en v2 | Solución en v3 |
+|---|---|
+| forma farmacéutica → familia, vía (en `medicamentos` y `productos_farmacia`) | Tabla `formas_farmaceuticas`; las demás guardan `id_forma` |
+| categoría del ISP → es bioequivalente (en `medicamentos`) | Tabla `categorias_isp` |
+| clave de equivalencia armada con otras columnas del producto | Tabla `grupos_equivalencia` (principio, concentración, familia, envase); el producto guarda `id_grupo` y la clave de texto la arma la vista |
+| registro sanitario → registro raíz | No se guarda: `split_part(registro_sanitario, '/', 1)` |
+| precio y envase → precio unitario (en `historico_precios`) | No se guarda: lo calculan `v_historico_precios` y `v_productos_vigentes` |
+| forma del producto repetida desde su medicamento vinculado | `productos_farmacia.id_forma` solo se llena cuando no hay forma oficial |
+
+Además se quitaron de `productos_farmacia` las columnas de concentración, que
+nunca se llenaban: la concentración comparable vive en el grupo de equivalencia.
+
+**La API no cambió**: consulta las vistas, que entregan las mismas columnas que
+antes. La migración (`db/migrar_3fn.py`) se ejecutó sobre la base existente,
+conservando el historial completo, y verificó que la vista principal entregara
+exactamente lo mismo antes y después.
+
+**Lo que corrigió**: el precio unitario guardado de algunos productos de
+Novasalud se había calculado con un envase mal leído (18 en vez de 20
+comprimidos). Al corregir el envase, el dato guardado quedó desactualizado: es
+la anomalía de actualización que la tercera forma normal evita. Ahora se
+calcula siempre con el envase vigente.
+
+**Ojo al recrear la base** (`docker compose down -v`): el historial de precios
+solo vive en la base. Respaldar antes con
+`docker exec bioequi_postgres_v2 pg_dump -U admin -d bioequi_db -Fc > respaldo.dump`.

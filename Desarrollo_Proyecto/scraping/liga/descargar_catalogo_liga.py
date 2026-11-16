@@ -44,7 +44,7 @@ PRESKU = "new_presku02"
 URL_SITIO = "https://ligafarmacia.cl"
 
 CABECERAS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "User-Agent": "bioEqui-academico/0.1 (proyecto universitario)",
     "Referer": URL_SITIO + "/",
     "Origin": URL_SITIO,
 }

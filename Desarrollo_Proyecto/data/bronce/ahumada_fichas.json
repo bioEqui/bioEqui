@@ -31889,5 +31889,327 @@
    "Concentracion": "100 MG",
    "Forma Farmaceutica": "Comprimidos Recubiertos"
   }
+ },
+ "98631": {
+  "nombre": "Borifem 10 Ovulos",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw61dcfe63/images/products/98631/98631.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 20199,
+  "especificaciones": {}
+ },
+ "98573": {
+  "nombre": "Ciclonic Laca para uñas 8%",
+  "marca": "Ciclonic",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/v1792435512040/images/products/98573/98573.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 30990,
+  "especificaciones": {}
+ },
+ "94016": {
+  "nombre": "Tadavitae 5 mg 14 comprimidos",
+  "marca": "Galenicum",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwc1bd94da/images/products/94016/94016.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 34999,
+  "especificaciones": {}
+ },
+ "98096": {
+  "nombre": "Premoxin 0.5% 5 ML Sol. Oftalmica",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw21dfa9e1/images/products/98096/98096.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 29899,
+  "especificaciones": {}
+ },
+ "1886": {
+  "nombre": "Morelin x 30 Comprimidos Recubiertos",
+  "marca": "Morelin",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw821db96f/images/products/1886/1886.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 18719,
+  "especificaciones": {
+   "Principio Activo": "AMITRIPTILINA-CLORDIAZEPOXIDO",
+   "Registro Sanitario": "F-3990/20",
+   "Laboratorio": "Chile",
+   "Marca": "Morelin",
+   "Concentracion": "12,5 MG-5MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "77479": {
+  "nombre": "Madozide 200 mg/50 mg x 30 Comprimidos",
+  "marca": "Madozide",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw5f428475/images/products/77479/77479.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 24624,
+  "especificaciones": {
+   "Principio Activo": "BENSERAZIDA CLORHIDRATO-LEVODOPA",
+   "Registro Sanitario": "F-20560/23",
+   "Laboratorio": "Chile",
+   "Marca": "Madozide",
+   "Concentracion": "200/50MG.",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "91083": {
+  "nombre": "Kenatrum 37,5/325 Comp. recubierto",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwb5278112/images/products/91083/91083.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 14545,
+  "especificaciones": {}
+ },
+ "65592": {
+  "nombre": "Gynorelle 28 Comprimidos Recubiertos",
+  "marca": "Gynorelle",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw81d3dff1/images/products/65592/65592.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 23913,
+  "especificaciones": {
+   "Principio Activo": "CLORMADINONA ACETATO-ETINILESTRADIOL",
+   "Registro Sanitario": "F-17360/24",
+   "Laboratorio": "Recalcine S.A.",
+   "Marca": "Gynorelle",
+   "Concentracion": "2 mg-0,02 mg",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "6310": {
+  "nombre": "Microgynon CD 28 Grageas",
+  "marca": "Microgynon",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw4e142f12/images/products/6310/6310.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 8631,
+  "especificaciones": {
+   "Principio Activo": "LEVONORGESTREL-ETINILESTRADIOL",
+   "Registro Sanitario": "F-9817/21",
+   "Laboratorio": "Tecnofarma S.A.",
+   "Marca": "Microgynon",
+   "Concentracion": "150 MCG-30 MCG",
+   "Forma Farmaceutica": "Grageas"
+  }
+ },
+ "25619": {
+  "nombre": "FINEX Terbinafina 250 mg 28 comprimidos",
+  "marca": "Finex",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw09bd0185/images/products/25619/25619.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 22524,
+  "especificaciones": {
+   "Principio Activo": "TERBINAFINA CLORHIDRATO",
+   "Registro Sanitario": "F-2478/24",
+   "Laboratorio": "Saval S.A.",
+   "Marca": "Finex",
+   "Concentracion": "250 MG",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "19887": {
+  "nombre": "Cariamyl x 20 g Crema Tópica",
+  "marca": "Cariamyl",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw50d82341/images/products/19887/19887.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 5244,
+  "especificaciones": {
+   "Principio Activo": "ALCANFOR-BENZOCAINA-MENTOL",
+   "Registro Sanitario": "F-4192/20",
+   "Laboratorio": "Prater",
+   "Marca": "Cariamyl",
+   "Concentracion": "0,097 g-1 g-0,375 g",
+   "Forma Farmaceutica": "Crema"
+  }
+ },
+ "98613": {
+  "nombre": "Vidaron M 50/1000 mg 60 comprimidos",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw73a27814/images/products/98613/98613.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 49999,
+  "especificaciones": {}
+ },
+ "91401": {
+  "nombre": "Queratol 10 290 Ml",
+  "marca": "Queratol",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw3728af36/images/products/91401/91401.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 19649,
+  "especificaciones": {}
+ },
+ "90301": {
+  "nombre": "Longride 60 mg x 10 Comprimidos Recubiertos",
+  "marca": "Longride",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwc4853c90/images/products/90301/90301.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 70299,
+  "especificaciones": {
+   "Principio Activo": "DAPOXETINA CLORHIDRATO",
+   "Registro Sanitario": "F-24523/24",
+   "Laboratorio": "Msn Labs Chile S.P.A.",
+   "Marca": "Longride",
+   "Concentracion": "60 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "90300": {
+  "nombre": "Longride 30 mg x 10 Comprimidos Recubiertos",
+  "marca": "Longride",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw3c68abaf/images/products/90300/90300.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 54169,
+  "especificaciones": {
+   "Principio Activo": "DAPOXETINA CLORHIDRATO",
+   "Registro Sanitario": "F-24522/24",
+   "Laboratorio": "Msn Labs Chile S.P.A.",
+   "Marca": "Longride",
+   "Concentracion": "30 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "1834": {
+  "nombre": "Amiodarona 200 mg Caja 20 Comp. MINTLAB CO SA",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw35690aa5/images/products/1834/1834.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 7370,
+  "especificaciones": {}
+ },
+ "89921": {
+  "nombre": "Valaxam 320 mg/5 mg x 30 Comprimidos Recubiertos",
+  "marca": "Valaxam",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw10f02a44/images/products/89921/89921.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 37839,
+  "especificaciones": {
+   "Principio Activo": "VALSARTAN-AMLODIPINO BESILATO",
+   "Registro Sanitario": "F-20231/23",
+   "Laboratorio": "Saval S.A.",
+   "Marca": "Valaxam",
+   "Concentracion": "320 MG - 5 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "9400": {
+  "nombre": "Paxon 5 mg x 20 Comprimidos",
+  "marca": "Paxon",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw17f081a7/images/products/9400/9400.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 12231,
+  "especificaciones": {
+   "Principio Activo": "BUSPIRONA CLORHIDRATO",
+   "Registro Sanitario": "F-5476/20",
+   "Laboratorio": "Saval S.A.",
+   "Marca": "Paxon",
+   "Concentracion": "5 MG",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "82599": {
+  "nombre": "EVOCAZ CD Donepezilo clorhidrato 5 mg 30 comprimidos",
+  "marca": "Evocaz Cd",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw1a1fc048/images/products/82599/82599.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 44794,
+  "especificaciones": {
+   "Principio Activo": "DONEPEZILO CLORHIDRATO",
+   "Registro Sanitario": "F-22769/21",
+   "Laboratorio": "Saval S.A.",
+   "Marca": "Evocaz Cd",
+   "Concentracion": "5 MG",
+   "Forma Farmaceutica": "Comprimidos Dispersables"
+  }
+ },
+ "77575": {
+  "nombre": "Rubifen Sr 20Mg.Caja 30 Comp.Rec. Lp",
+  "marca": "Rubifen",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw49a5711c/images/products/77575/77575.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 19840,
+  "especificaciones": {
+   "Principio Activo": "METILFENIDATO CLORHIDRATO",
+   "Registro Sanitario": "F-14593/20",
+   "Laboratorio": "Exeltis",
+   "Marca": "Rubifen",
+   "Concentracion": "20MG",
+   "Forma Farmaceutica": "Comprimido"
+  }
+ },
+ "92790": {
+  "nombre": "Zopiclona 7,5 mg x 30 Comprimidos Recubiertos",
+  "marca": "Generico",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwb48b5630/images/products/92790/92790.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 2932,
+  "especificaciones": {
+   "Principio Activo": "ZOPICLONA",
+   "Registro Sanitario": "F-27046/22",
+   "Laboratorio": "Seven Pharma Chile Spa",
+   "Marca": "Generico",
+   "Concentracion": "7,5 MG",
+   "Forma Farmaceutica": "Comprimidos Recubiertos"
+  }
+ },
+ "98551": {
+  "nombre": "Vildavitae Plus 50/1000 Mg X 60 Comp Rec",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw55e7dcbd/images/products/98551/98551.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 30153,
+  "especificaciones": {}
+ },
+ "98552": {
+  "nombre": "Vildavitae Plus 50/850 Mg X 60 Comp Rec",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwa92ce946/images/products/98552/98552.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 28664,
+  "especificaciones": {}
+ },
+ "98715": {
+  "nombre": "Clavspring 875/125 14 C",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw42017733/images/products/98715/98715.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 19299,
+  "especificaciones": {}
+ },
+ "98731": {
+  "nombre": "Todine 2 Mg X 30 Comp Rec",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwa3590505/images/products/98731/98731.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 19499,
+  "especificaciones": {}
+ },
+ "98493": {
+  "nombre": "Bisovitae 5 mg",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw99f510c8/images/products/98493/98493.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 30199,
+  "especificaciones": {}
+ },
+ "98743": {
+  "nombre": "Olmecard D 40/12,5Mg 30 Comp Rec",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw1ffc4de5/images/products/98743/98743.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 12999,
+  "especificaciones": {}
+ },
+ "98742": {
+  "nombre": "Olmecard D 20/12,5 Mg 30 Comp Rec",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwe675ec45/images/products/98742/98742.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 11114,
+  "especificaciones": {}
+ },
+ "98492": {
+  "nombre": "Bisovitae 2,5 Mg X 30 Comprimidos",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw6d82c492/images/products/98492/98492.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 30049,
+  "especificaciones": {}
+ },
+ "98744": {
+  "nombre": "Tiquepin 200 Mg X 30 Comp Rec",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw027e3e35/images/products/98744/98744.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 32469,
+  "especificaciones": {}
+ },
+ "98716": {
+  "nombre": "Clavspring 875/125 20C",
+  "marca": "",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dwef4d8f2e/images/products/98716/98716.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 27499,
+  "especificaciones": {}
+ },
+ "9896": {
+  "nombre": "Fluanxol Depot 20Mg. Caja 1 Ampolla 1Ml.",
+  "marca": "Fluanxol",
+  "imagen": "https://www.farmaciasahumada.cl/dw/image/v2/BJVH_PRD/on/demandware.static/-/Sites-ahumada-master-catalog/default/dw9d135540/images/products/9896/9896.jpg?sw=1050&sh=1050&sm=fit",
+  "precio_ficha": 33132,
+  "especificaciones": {
+   "Principio Activo": "FLUPENTIXOL",
+   "Registro Sanitario": "F-11498/11",
+   "Laboratorio": "Lundbeck",
+   "Marca": "Fluanxol",
+   "Concentracion": "20MG/VIAL",
+   "Forma Farmaceutica": "Ampolla"
+  }
  }
 }

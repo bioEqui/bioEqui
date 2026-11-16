@@ -1,6 +1,18 @@
 """
-Capa plata (Profar): normaliza el catálogo extraído cruzando directamente 
-contra la base de datos PostgreSQL (tabla medicamentos) para máxima precisión.
+Capa plata (Profar): normaliza el catálogo extraído y lo deja con las
+mismas columnas que las demás farmacias.
+
+El principio activo se obtiene, en este orden:
+    1. Por el registro ISP que publica Profar: los principios oficiales de
+       ese registro (data/plata/isp_composicion.csv).
+    2. Por el campo "Principio Activo" de la ficha de Profar.
+    3. Reconociendo dentro del nombre un principio activo del vocabulario
+       oficial del ISP, por palabra completa (igual que Cruz Verde).
+Si ninguno funciona, el producto queda sin principio y no se compara: es
+preferible no comparar a comparar productos distintos.
+
+Como toda la capa plata, lee de bronce y de la plata del ISP; no depende de
+la base de datos.
 """
 
 import csv
@@ -8,9 +20,8 @@ import hashlib
 import json
 import re
 import unicodedata
+from collections import defaultdict
 from pathlib import Path
-import pandas as pd
-from sqlalchemy import create_engine
 
 RAIZ = Path(__file__).resolve().parents[2]
 ENTRADA = RAIZ / "data" / "bronce"
@@ -61,30 +72,94 @@ def extraer_concentracion(texto):
     if ref_unidad: ref_valor = float(m.group(3).replace(",", ".")) if m.group(3) else 1.0
     return valor, unidad, ref_valor, ref_unidad.lower()
 
-def extraer_envase(nombre):
+# Profar abrevia la forma en el nombre ("X 30 COMP. REC.", "X 60 CAPS.").
+# Se expande antes de buscar forma y envase, porque la capa oro solo
+# reconoce las formas escritas completas
+EXPANSIONES = [
+    (r"\bcomp\.?\s*rec\.?\s*lib\.?\s*prol\.?", "comprimidos recubiertos de liberacion prolongada"),
+    (r"\bcomp\.?\s*lib\.?\s*prol\.?", "comprimidos de liberacion prolongada"),
+    (r"\bcomp\.?\s*rec\.?", "comprimidos recubiertos"),
+    (r"\bcomp\.?\s*disp\.?", "comprimidos dispersables"),
+    (r"\bcomp\.?\s*mast\.?", "comprimidos masticables"),
+    (r"\bcomp\.?\s*efer\w*\.?", "comprimidos efervescentes"),
+    (r"\bcomp\b\.?", "comprimidos"),
+    (r"\bcaps\.?\s*bland\w*\.?", "capsulas blandas"),
+    (r"\bcaps\b\.?", "capsulas"),
+    (r"\btabletas?\b", "comprimidos"),
+    (r"\bsusp\.?\s*oral\b", "suspension oral"),
+    (r"\bsol\.?\s*oral\b", "solucion oral"),
+    (r"\bsol\.?\s*iny\w*\.?", "solucion inyectable"),
+    (r"\bsol\.?\s*oft\w*\.?", "solucion oftalmica"),
+    (r"\bsupos?\.?\b", "supositorios"),
+]
+
+# Forma que entrega la API cuando el nombre no la trae
+FORMAS_API = {
+    "comprimido": "comprimidos", "tabletas": "comprimidos", "capsulas": "capsulas",
+    "suspension oral": "suspension oral", "solucion oral": "solucion oral",
+    "solucion inyectable": "solucion inyectable", "jarabe": "jarabe", "crema": "crema",
+    "gotas": "gotas", "polvo": "polvo", "gel": "gel", "unguento": "unguento",
+    "frasco ampolla": "frasco ampolla", "solucion oftalmologica": "solucion oftalmica",
+    "solucion nasal": "solucion nasal", "supositorio": "supositorios", "sachet": "sobres",
+}
+
+PATRON_ML = re.compile(r"\bx\s*(\d+(?:[.,]\d+)?)\s*ml\b")
+
+def expandir(nombre):
     texto = sin_tildes(nombre)
+    for patron, reemplazo in EXPANSIONES:
+        texto = re.sub(patron, reemplazo, texto)
+    return texto
+
+def extraer_envase(nombre):
+    texto = expandir(nombre)
     m = PATRON_UNIDADES.search(texto)
-    if m: return m.group(1), "comprimidos" if m.group(2) == "comp" else m.group(2)
+    if m:
+        unidad = m.group(2)
+        unidad = {"comp": "comprimidos", "comprimido": "comprimidos", "capsula": "capsulas",
+                  "tabletas": "comprimidos", "sobre": "sobres"}.get(unidad, unidad)
+        return m.group(1), unidad
+    m = PATRON_ML.search(texto)
+    if m: return m.group(1).replace(",", "."), "ml"
     return "", ""
 
-def cargar_datos_desde_bd(engine):
-    """Carga el catálogo oficial completo desde PostgreSQL"""
-    df = pd.read_sql_table('medicamentos', con=engine)
-    mapa_isp = {}
-    
-    for _, row in df.iterrows():
-        # Usamos registro_raiz según la estructura de tu BD
-        reg = str(row['registro_raiz']).strip().upper()
-        # Mapeamos temporalmente el nombre comercial en lugar del principio activo
-        pa = str(row['nombre_comercial']).strip().upper()
-        
-        # Capturar el registro raíz de la BD (F-1234, B-1234, etc.)
-        m = re.search(r'([A-Z]-\d+)', reg)
-        if m and pa and pa.lower() != 'nan':
-            mapa_isp[m.group(1)] = pa
-            
-    df['nombre_clean'] = df['nombre_comercial'].astype(str).str.upper().str.strip()
-    return mapa_isp, df
+def cargar_isp():
+    """
+    Composicion oficial del ISP: los principios activos de cada registro
+    y el vocabulario completo, para reconocerlos dentro de un nombre.
+    """
+    ruta = SALIDA / "isp_composicion.csv"
+    if not ruta.exists():
+        raise SystemExit(f"Falta {ruta}. Ejecuta primero ingesta_isp/normalizacion_isp.py.")
+
+    por_registro = defaultdict(set)
+    vocabulario = set()
+    with ruta.open(encoding="utf-8") as f:
+        for fila in csv.DictReader(f):
+            principio = sin_tildes(fila["principio_activo"])
+            if not principio:
+                continue
+            por_registro[fila["registro_raiz"].strip().upper()].add(principio)
+            # Los nombres muy cortos generan falsos positivos
+            if len(principio) > 5:
+                vocabulario.add(principio)
+    return por_registro, vocabulario
+
+
+def principio_en_nombre(nombre, vocabulario):
+    """
+    Principios activos del ISP mencionados en el nombre, por palabra
+    completa: "tretinoina" no debe reconocerse dentro de "isotretinoina".
+    Si uno esta contenido en otro mas largo, se queda el largo
+    ("acido acetilsalicilico" y no "acido").
+    """
+    texto = expandir(nombre)
+    hallados = [p for p in vocabulario if re.search(r"\b" + re.escape(p) + r"\b", texto)]
+    resultado = []
+    for p in sorted(hallados, key=len, reverse=True):
+        if not any(p in otro for otro in resultado):
+            resultado.append(p)
+    return sorted(resultado)
 
 def main():
     candidatos = sorted(ENTRADA.glob("profar_catalogo_*.json"))
@@ -97,10 +172,8 @@ def main():
     datos = json.loads(archivo.read_text(encoding="utf-8"))
     fecha = datos.get("fecha_muestreo", "")
 
-    # CONEXIÓN A POSTGRESQL (Actualizado al puerto 5433)
-    print("Conectando a PostgreSQL (puerto 5433) para cargar diccionario clínico...")
-    engine = create_engine('postgresql://admin:password123@localhost:5433/bioequi_db')
-    mapa_isp, df_meds = cargar_datos_desde_bd(engine)
+    composicion_isp, vocabulario = cargar_isp()
+    print(f"Vocabulario del ISP: {len(vocabulario)} principios activos")
 
     productos = []
     precios = []
@@ -113,13 +186,15 @@ def main():
         # El id es el numero final de la URL ("...-x-20-comp-114046.html"):
         # la URL completa excede el largo de la columna en la base. Sin URL
         # se usa un hash estable del nombre (hash() cambia en cada ejecucion)
+        # La API GraphQL trae el sku, que es el mismo numero de la URL
         m_id = re.search(r"-(\d+)\.html$", url_producto)
-        sku = m_id.group(1) if m_id else "n" + hashlib.md5(nombre.encode("utf-8")).hexdigest()[:12]
+        sku = p.get("sku") or (m_id.group(1) if m_id else "n" + hashlib.md5(nombre.encode("utf-8")).hexdigest()[:12])
+        especificaciones = p.get("especificaciones", {})
 
         principio = ""
         principio_origen = ""
         registro_raiz = ""
-        registro_declarado = p.get("especificaciones", {}).get("Registro ISP", "")
+        registro_declarado = especificaciones.get("Registro ISP", "")
 
         # Limpiar registro (Captura F-, B-, E-)
         if registro_declarado:
@@ -132,53 +207,47 @@ def main():
                 registro_raiz = match_reg.group(1).upper()
                 registro_declarado = registro_raiz
 
-        # ESTRATEGIA 1: Cruce exacto por Registro ISP contra la BD
-        if registro_raiz and registro_raiz in mapa_isp:
-            principio = mapa_isp[registro_raiz]
+        # ESTRATEGIA 1: principios oficiales del registro ISP declarado
+        if registro_raiz and registro_raiz in composicion_isp:
+            principio = " ".join(sorted(composicion_isp[registro_raiz])).upper()
             principio_origen = "registro_isp"
 
         # ESTRATEGIA 2: Especificaciones explícitas
         if not principio:
-            pa_declarado = p.get("especificaciones", {}).get("Principio Activo", "")
+            pa_declarado = especificaciones.get("Principio Activo", "")
             if pa_declarado:
                 principio = pa_declarado.upper()
                 principio_origen = "ficha_tecnica"
 
-        # ESTRATEGIA 3: Cruce inteligente por Nombre Comercial
+        # ESTRATEGIA 3: principio activo del ISP reconocido en el nombre.
+        # Antes se buscaba cualquier palabra del nombre dentro de los nombres
+        # comerciales del ISP y se tomaba el primero: "COMP" esta en casi
+        # todos, asi que se asignaban medicamentos sin relacion y se armaban
+        # comparaciones falsas (Rybelsus agrupado con melatonina).
         if not principio:
-            # Quitamos los símbolos extraños como (REF), *, -, etc.
-            palabras_limpias = [re.sub(r'[^A-Z0-9]', '', w) for w in nombre.upper().split()]
-            palabras_clave = [w for w in palabras_limpias if len(w) > 3]
-            
-            for palabra in palabras_clave:
-                # Evitamos palabras genéricas que causen falsos positivos
-                if palabra in ['PARA', 'COMO', 'FORMA', 'SOBRE', 'MGML']: continue
-                
-                candidatos_bd = df_meds[df_meds['nombre_clean'].str.contains(palabra, regex=False, na=False)]
-                
-                if not candidatos_bd.empty:
-                    # Traemos el NOMBRE COMERCIAL del ISP
-                    pa_encontrado = str(candidatos_bd.iloc[0]['nombre_comercial']).upper()
-                    if pa_encontrado and pa_encontrado.lower() != 'nan':
-                        principio = pa_encontrado
-                        principio_origen = "nombre_comercial_bd"
-                        break # Si encontró un match, dejamos de buscar palabras
+            encontrados = principio_en_nombre(nombre, vocabulario)
+            if encontrados:
+                principio = " ".join(encontrados).upper()
+                principio_origen = "nombre"
 
-        forma = extraer_forma(nombre)
+        forma = extraer_forma(expandir(nombre))
         forma_origen = "nombre" if forma else ""
+        if not forma:
+            forma = FORMAS_API.get(sin_tildes(especificaciones.get("Forma Farmacéutica", "")), "")
+            forma_origen = "api" if forma else ""
         valor, uni, ref_valor, ref_unidad = extraer_concentracion(nombre)
         cantidad, unidad = extraer_envase(nombre)
 
         productos.append({
-            "id_producto": sku, "sku": sku, "nombre_publicado": nombre, "marca": "", 
-            "url_producto": url_producto, "url_imagen": p.get("imageUrl", ""), "ean": "",
+            "id_producto": sku, "sku": sku, "nombre_publicado": nombre, "marca": especificaciones.get("Marca", ""),
+            "url_producto": url_producto, "url_imagen": p.get("imageUrl", ""), "ean": p.get("ean", ""),
             "registro_declarado": registro_declarado, "registro_raiz": registro_raiz,
             "principio_activo": principio, "principio_origen": principio_origen,
             "forma_farmaceutica": forma, "forma_origen": forma_origen,
             "concentracion_valor": valor if valor is not None else "", "concentracion_unidad": uni,
             "referencia_valor": ref_valor if ref_valor is not None else "", "referencia_unidad": ref_unidad,
             "cantidad_envase": cantidad, "unidad_envase": unidad, "clase_producto": "",
-            "bioequivalente_declarado": bool(p.get("isBioequivalent")), "bioequivalente_tipo": "", "condicion_venta": "",
+            "bioequivalente_declarado": bool(p.get("isBioequivalent")), "bioequivalente_tipo": "", "condicion_venta": especificaciones.get("Condición de Venta", ""),
         })
 
         precio_oferta = p.get("price-sale-cl")
@@ -186,7 +255,7 @@ def main():
             precios.append({
                 "id_producto": sku, "fecha_muestreo": fecha,
                 "precio_normal": p.get("price-list-cl") or precio_oferta,
-                "precio_oferta": precio_oferta, "disponible": True, 
+                "precio_oferta": precio_oferta, "disponible": p.get("disponible", True),
             })
 
     SALIDA.mkdir(parents=True, exist_ok=True)
@@ -200,14 +269,16 @@ def main():
     con_reg = sum(1 for x in productos if x["registro_raiz"])
     con_pri = sum(1 for x in productos if x["principio_activo"])
     origen_isp = sum(1 for x in productos if x["principio_origen"] == "registro_isp")
-    origen_bd = sum(1 for x in productos if x["principio_origen"] == "nombre_comercial_bd")
+    origen_ficha = sum(1 for x in productos if x["principio_origen"] == "ficha_tecnica")
+    origen_nombre = sum(1 for x in productos if x["principio_origen"] == "nombre")
 
     print(f"\n{total} productos normalizados")
     print(f"  con registro ISP detectado:  {con_reg:4} ({100*con_reg/total if total else 0:.1f}%)")
-    print(f"  vinculados exitosamente:     {con_pri:4} ({100*con_pri/total if total else 0:.1f}%)")
-    print(f"  -> cruzados por código ISP:  {origen_isp:4} ({100*origen_isp/total if total else 0:.1f}%)")
-    print(f"  -> cruzados por nombre BD:   {origen_bd:4} ({100*origen_bd/total if total else 0:.1f}%)")
-    print(f"\n¡Archivos CSV generados en data/plata listos para subir a la BD!")
+    print(f"  con principio activo:        {con_pri:4} ({100*con_pri/total if total else 0:.1f}%)")
+    print(f"  -> por registro ISP:         {origen_isp:4} ({100*origen_isp/total if total else 0:.1f}%)")
+    print(f"  -> por ficha de Profar:      {origen_ficha:4} ({100*origen_ficha/total if total else 0:.1f}%)")
+    print(f"  -> reconocido en el nombre:  {origen_nombre:4} ({100*origen_nombre/total if total else 0:.1f}%)")
+    print(f"\nGuardado en {SALIDA}")
 
 if __name__ == "__main__":
     main()

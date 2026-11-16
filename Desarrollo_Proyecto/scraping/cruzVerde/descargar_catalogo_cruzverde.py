@@ -31,12 +31,12 @@ PAUSA = 2  # Pausa entre peticiones para no saturar el servidor
 MAX_PAGINAS = 100  # Tope de seguridad 
 
 CABECERAS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "es-CL,es-419;q=0.9,es;q=0.8,en;q=0.7",
     "Origin": "https://www.cruzverde.cl",
     "Referer": "https://www.cruzverde.cl/",
-    "sec-ch-ua": '"Google Chrome";v="155", "Chromium";v="155", "Not(A:Brand";v="24"',
+    "sec-ch-ua": '"Google Chrome";v="156", "Chromium";v="156", "Not(A:Brand";v="24"',
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": '"Windows"',
     "sec-fetch-dest": "empty",
