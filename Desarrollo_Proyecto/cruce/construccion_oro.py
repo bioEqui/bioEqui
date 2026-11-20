@@ -31,6 +31,12 @@ Validaciones incorporadas:
     nombre oficial, y los casos que no superan la validacion se apartan en
     vez de aceptarse.
 
+    En los combinados (dos o mas principios activos) la concentracion
+    lleva la dosis de cada uno ("875+125mg"), leida del nombre publicado
+    (ver dosis.py). Si el nombre no trae todas las dosis, el producto
+    queda sin clave: con una sola dosis, un 875/125 se compararia con un
+    500/125.
+
 Uso:
     python construir_oro.py
 """
@@ -40,6 +46,8 @@ import re
 import unicodedata
 from collections import defaultdict
 from pathlib import Path
+
+from dosis import concentracion_combinada, contar_principios
 
 RAIZ = Path(__file__).resolve().parents[1]
 PLATA = RAIZ / "data" / "plata"
@@ -307,6 +315,13 @@ def main():
                 p["concentracion_unidad"],
                 p["referencia_valor"],
                 p["referencia_unidad"],
+            )
+
+        # Combinados: la concentracion declarada es la de un solo principio
+        # activo; se reemplaza por la dosis de cada uno, o queda vacia
+        if principios and contar_principios(principios, principio_origen) >= 2:
+            conc = concentracion_combinada(
+                nombre, contar_principios(principios, principio_origen), familia
             )
 
         bio_comercial = p["bioequivalente_declarado"]

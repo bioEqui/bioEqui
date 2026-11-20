@@ -23,6 +23,7 @@ Documentacion interactiva en http://localhost:8000/docs
 """
 
 import os
+import sys
 from pathlib import Path
 from typing import Optional
 
@@ -34,6 +35,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 RAIZ = Path(__file__).resolve().parents[1]
 load_dotenv(RAIZ / ".env")
+
+# La lectura de dosis de los combinados es la misma que usa la capa oro
+sys.path.insert(0, str(RAIZ / "cruce"))
+from dosis import detalle_dosis  # noqa: E402
 
 CONEXION = {
     "host": os.getenv("DB_HOST", "localhost"),
@@ -88,6 +93,17 @@ def clave_presentacion(clave):
     return f"{principio}|{conc}|{familia}"
 
 
+def dosis_combinado(principio, conc, nombres):
+    """
+    Dosis de cada principio activo de un combinado, para mostrar
+    "Amoxicilina 875 mg + acido clavulanico 125 mg" en vez de una sola
+    dosis. None si no es combinado o no se puede determinar.
+    """
+    if "+" not in principio:
+        return None
+    return detalle_dosis(principio.split("+"), conc, nombres)
+
+
 @app.get("/")
 def raiz():
     return {
@@ -136,6 +152,7 @@ def buscar(
 
     # Agrupar por presentacion, sin considerar el envase
     presentaciones = {}
+    nombres = {}
 
     for f in filas:
         clave = clave_presentacion(f["clave_equivalencia"])
@@ -159,6 +176,7 @@ def buscar(
         p = presentaciones[clave]
         p["productos"] += 1
         p["farmacias"].add(f["farmacia"])
+        nombres.setdefault(clave, []).append(f["nombre_publicado"])
 
         if f["cantidad_envase"]:
             cantidad = float(f["cantidad_envase"])
@@ -173,9 +191,12 @@ def buscar(
             p["url_imagen"] = f["url_imagen"]
 
     resultado = []
-    for p in presentaciones.values():
+    for clave, p in presentaciones.items():
         p["envases"] = sorted(p["envases"])
         p["farmacias"] = sorted(p["farmacias"])
+        p["dosis_detalle"] = dosis_combinado(
+            p["principio_activo"], p["concentracion"], nombres[clave]
+        )
         resultado.append(p)
 
     resultado.sort(key=lambda x: (-x["productos"], x["precio_desde"] or 0))
@@ -226,6 +247,15 @@ def presentacion(clave: str, solo_disponibles: bool = True):
 
     principio, conc, familia, _ = partes_clave(clave + "|")
 
+    dosis = None
+    if "+" in principio:
+        nombres = consultar(
+            "SELECT DISTINCT nombre_publicado FROM v_productos_vigentes "
+            "WHERE clave_equivalencia LIKE %s",
+            (f"{clave}|%",),
+        )
+        dosis = dosis_combinado(principio, conc, [n["nombre_publicado"] for n in nombres])
+
     tamanios = []
     for f in filas:
         ahorro = None
@@ -255,6 +285,7 @@ def presentacion(clave: str, solo_disponibles: bool = True):
         "clave_presentacion": clave,
         "principio_activo": principio,
         "concentracion": conc,
+        "dosis_detalle": dosis,
         "familia": familia,
         "precio_desde": min(precios) if precios else None,
         "farmacias": sorted({x for f in filas for x in f["lista_farmacias"]}),
