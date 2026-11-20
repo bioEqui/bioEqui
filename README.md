@@ -1,85 +1,61 @@
 # BioEqui - Plataforma de Homologación de Medicamentos Bioequivalentes
 
 ## Descripción
-**BioEqui** es un observatorio analítico y motor de homologación clínica.
-- **Qué hace:** Permite a los usuarios buscar un medicamento comercial y encontrar sus alternativas bioequivalentes certificadas con exactitud (mismo principio activo, dosis y presentación), mostrando además el historial de precios.
-- **A quién va dirigido:** Ciudadanos, pacientes con tratamientos crónicos y adultos mayores en Chile que buscan transparencia en el mercado farmacéutico.
-- **Qué problema resuelve:** Disminuye el gasto de bolsillo generado por la asimetría de información, automatizando el cruce de los datos clínicos del Instituto de Salud Pública (ISP) con los valores comerciales de las cadenas de farmacias.
+**BioEqui** compara el precio de un mismo medicamento entre farmacias de Chile e indica qué alternativas son bioequivalentes, verificándolo contra el registro oficial del Instituto de Salud Pública (ISP).
+- **Qué hace:** el usuario busca un medicamento por nombre o principio activo y ve sus alternativas comparables (mismo principio activo, dosis, forma y tamaño de envase), ordenadas por precio y con su historial.
+- **A quién va dirigido:** personas con tratamientos crónicos, adultos mayores y cualquier persona que quiera ahorrar en medicamentos.
+- **Qué problema resuelve:** el mismo medicamento cuesta muy distinto según la farmacia y es difícil saber qué marca más barata se puede usar sin riesgo.
 
-## Arquitectura de la Solución
-El sistema se compone de cuatro capas principales:
-1. **Capa de Ingesta Oficial:** Pipeline ETL que normaliza el catálogo abierto del ISP.
-2. **Capa de Extracción:** Microservicio Python de Web Scraping ético ejecutado asíncronamente para capturar precios públicos.
-3. **Capa Backend (API REST):** Motor de validación de 4 filtros para asegurar la equivalencia terapéutica exacta.
-4. **Capa Frontend:** Interfaz web responsiva con visualización de histórico de precios.
+Farmacias integradas: Dr. Simi, Cruz Verde, Ahumada, Profar, Farmacia Liga Chilena contra la Epilepsia y Novasalud.
 
-## Tecnologías Utilizadas
-- **Backend & API:** Python 3.10+, FastAPI, Uvicorn, psycopg[binary].
-- **Base de Datos:** PostgreSQL orquestado mediante contenedores Docker.
-- **Frontend:** React, Vite, JavaScript, HTML/CSS.
-- **Ingeniería de Datos (Scraping & ETL):** Pandas, BeautifulSoup, Requests (con inyección dinámica de cabeceras).
-- **Control de Versiones:** Git y GitHub.
+## Arquitectura
+- **Datos (arquitectura medallón):** bronce guarda el catálogo crudo de cada farmacia y del ISP; plata lo normaliza a un formato común; oro lo cruza con el ISP por registro sanitario y arma los grupos de productos comparables.
+- **Aplicación (tres capas):** PostgreSQL 15 en Docker (esquema en tercera forma normal, 9 tablas y 3 vistas), API REST en FastAPI y página en React con Vite.
 
-## Metodología de Trabajo
-- **Arquitectura de Datos:** Enfoque Medallón (Capas Bronce, Plata, Oro) para aislar la extracción de catálogos crudos, su normalización por farmacia, y el cruce definitivo con los registros del ISP.
-- **Desarrollo Ágil:** Iteraciones cortas adaptando principios de CRISP-DM para proyectos de datos.
-- **Control de Versiones:** Flujo de ramas estructurado (`main`, `develop`). Para garantizar despliegues limpios y evitar conflictos de configuración, todo el código fuente del sistema (API, BD, Frontend y Scraping) se encuentra centralizado de forma estricta en la carpeta `Desarrollo_Proyecto`.
+## Tecnologías
+- **Datos:** Python, Requests, BeautifulSoup, pandas.
+- **Base de datos:** PostgreSQL 15 en Docker (puerto 5433).
+- **API:** FastAPI y Uvicorn (puerto 8000), psycopg2.
+- **Página:** React y Vite (puerto 5173).
 
-## Instrucciones de Ejecución Local
+## Metodología
+Scrum en cuatro sprints de tres semanas. Ramas `main` (entregas) y `develop` (integración), con una rama por funcionalidad y pull request revisado por el otro integrante. Todo el código está en `Desarrollo_Proyecto/`.
 
-### 1. Clonar el Repositorio y Configurar Entorno
-El proyecto utiliza un entorno virtual en la raíz para aislar las librerías de Python.
+## Extracción ética
+Cada extractor respeta el `robots.txt` de la farmacia, hace pausas de 2 segundos entre peticiones, se identifica y solo toma información pública de productos, nunca datos personales. Cruz Verde exige una sesión de navegador para mostrar precios: se usa una sesión normal, sin forzar el acceso, y si caduca esa farmacia simplemente no se actualiza.
 
+## Ejecución local
+
+### 1. Instalar (una sola vez)
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/bioEqui/bioEqui.git
 cd bioEqui
-
-# Crear entorno virtual (si no existe)
 python -m venv venv
-
-# Activar entorno (Windows)
-.\venv\Scripts\Activate
-# Activar entorno (Mac/Linux)
-source venv/bin/activate
-
-# Instalar dependencias requeridas
+venv\Scripts\activate            # Windows  (Mac/Linux: source venv/bin/activate)
 pip install -r Desarrollo_Proyecto/requirements.txt
 ```
 
-### 2. Variables de Entorno (.env)
-Debe contener la URL de conexión a la base de datos apuntando al puerto `5433`:
+Copia `Desarrollo_Proyecto/.env.example` como `Desarrollo_Proyecto/.env` y completa `DB_PASSWORD` (y `CRUZVERDE_COOKIE` si vas a actualizar Cruz Verde). El `.env` no se sube al repositorio.
 
-```env
-DATABASE_URL=postgresql://usuario:contraseña@localhost:5433/bioequi
-```
-
-### 3. Levantar la Base de Datos (Docker)
-Inicia el contenedor de PostgreSQL utilizando el archivo compose de la nueva estructura.
-
-```bash
-docker compose -f Desarrollo_Proyecto\db\propuesta\docker-compose.yml up -d
-```
-*(Verifica en Docker Desktop o con `docker ps` que el contenedor `bioequi_postgres_v2` esté corriendo en el puerto 5433).*
-
-### 4. Levantar la API REST (Backend)
-Con el entorno virtual activado, entra a la carpeta de desarrollo y ejecuta Uvicorn utilizando el módulo de Python para evitar directivas de bloqueo de PowerShell en Windows.
-
+### 2. Levantar todo
+Doble clic en `Desarrollo_Proyecto/levantar.bat`, o:
 ```bash
 cd Desarrollo_Proyecto
-python -m uvicorn api.main:app --reload
+python levantar.py
 ```
-*La API quedará escuchando y documentada en `http://localhost:8000/docs`.*
+Abre Docker Desktop si hace falta, enciende la base, inicia la API y la página, y abre `http://localhost:5173`. La documentación de la API queda en `http://localhost:8000/docs`.
 
-### 5. Levantar el Frontend (React)
-Abre una nueva terminal, navega a la carpeta del frontend, instala los paquetes de Node e inicia el servidor de Vite.
-
+### 3. Actualizar los precios
 ```bash
-cd Desarrollo_Proyecto/frontend
-npm install
-npm run dev
+python actualizar.py                    # flujo completo: bronce, plata, oro y carga
+python actualizar.py --sin-cruzverde    # sin Cruz Verde (sin cookie vigente)
+python actualizar.py --sin-descarga     # solo reprocesa
 ```
-*La plataforma web estará disponible en `http://localhost:5173`.*
+Si una farmacia trae menos del 80% de los productos de su muestreo anterior, la descarga se aparta en `data/bronce/rechazados/` y no se procesa.
 
-### 6. Notas de Operación y Solución de Problemas
-- **Bloqueos de Web Scraping (Error HTTP 401):** El extractor de Cruz Verde (`descargar_catalogo_cruzverde.py`) está diseñado para inyectar cookies y *headers* dinámicos imitando a un navegador Chrome real, evadiendo así las protecciones anti-bot del servidor.
-- **Problemas de dependencias (psycopg):** Si la API falla al inicio indicando errores de conexión PostgreSQL, reconstruye las librerías del entorno asegurando que se instale `psycopg[binary]`, tal como está fijado en el `requirements.txt`.
+### 4. Ejecutar las pruebas
+```bash
+python pruebas/ejecutar_pruebas.py      # 23 casos; resultado en pruebas/resultados/
+```
+
+El detalle de instalación, respaldo, migración y solución de problemas está en el Manual de administrador (`FASE 3/Evidencias Proyecto/27_Manual_de_Administrador.docx`).
