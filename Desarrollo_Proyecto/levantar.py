@@ -90,7 +90,9 @@ def levantar_docker():
 
 def levantar_base():
     existe = CONTENEDOR in docker("ps", "-a", "--format", "{{.Names}}").stdout.split()
-    r = docker("start", CONTENEDOR) if existe else docker("compose", "-f", str(COMPOSE), "up", "-d")
+    # La contrasena de la base esta en el .env, no en el docker-compose
+    r = docker("start", CONTENEDOR) if existe else docker(
+        "compose", "--env-file", str(RAIZ / ".env"), "-f", str(COMPOSE), "up", "-d")
     if r.returncode != 0:
         paso("2. No se pudo encender la base de datos:")
         print("   " + (r.stderr or r.stdout).strip().replace("\n", "\n   "))

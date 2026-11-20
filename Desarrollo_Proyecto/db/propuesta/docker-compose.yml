@@ -1,3 +1,7 @@
+# La contrasena no se guarda aqui: se lee de DB_PASSWORD en el .env.
+# Usar siempre con --env-file, desde la carpeta Desarrollo_Proyecto:
+#   docker compose --env-file .env -f db/propuesta/docker-compose.yml up -d
+# (levantar.py ya lo hace asi)
 services:
   db_v2:
     image: postgres:15-alpine
@@ -5,7 +9,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Falta DB_PASSWORD en el .env}
       POSTGRES_DB: bioequi_db
     ports:
       - "5433:5432"
