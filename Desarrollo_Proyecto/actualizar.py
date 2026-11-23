@@ -119,6 +119,11 @@ def total_productos(ruta):
     return datos.get("total", len(datos.get("productos", [])))
 
 
+def descarga_incompleta(total, total_previo):
+    """True si la descarga trajo menos del UMBRAL del muestreo anterior."""
+    return bool(total_previo) and total < UMBRAL * total_previo
+
+
 def anterior(prefijo, hoy):
     """Ultimo catalogo de la farmacia anterior al de hoy."""
     previos = sorted(
@@ -208,7 +213,7 @@ def main():
 
             if previo:
                 total_previo = total_productos(previo)
-                if total_previo and total < UMBRAL * total_previo:
+                if descarga_incompleta(total, total_previo):
                     RECHAZADOS.mkdir(exist_ok=True)
                     archivo.replace(RECHAZADOS / archivo.name)
                     detalle = (f"trajo {total} productos y antes {total_previo} "

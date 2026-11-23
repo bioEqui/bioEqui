@@ -12,12 +12,29 @@ const ruta = (base, clave) => `${API}/${base}/${encodeURIComponent(clave)}`;
 const capitalizar = (t) =>
   t ? t.charAt(0).toUpperCase() + t.slice(1) : "";
 
-// "500.0mg" se lee mejor como "500 mg"
+// "500.0mg" se lee mejor como "500 mg"; en los combinados,
+// "875+125mg" se lee "875 mg + 125 mg"
 function legibleConcentracion(c) {
   if (!c) return "";
+  const m = c.match(/^([\d.+]+)(mg(?:\/ml)?)$/);
+  if (m && m[1].includes("+")) {
+    const [unidad, porMl] = m[2].split("/");
+    return (
+      m[1].split("+").map((d) => `${d} ${unidad}`).join(" + ") +
+      (porMl ? " por ml" : "")
+    );
+  }
   return c
     .replace(/(\d+)\.0(?=[a-z])/gi, "$1")
     .replace(/(\d)([a-z])/i, "$1 $2");
+}
+
+// Nombre del medicamento con su dosis. Un combinado muestra la dosis
+// de cada principio activo cuando la API puede determinarla
+function tituloMedicamento(datos) {
+  if (datos.dosis_detalle) return capitalizar(datos.dosis_detalle);
+  const principio = (datos.principio_activo || "").split("+").join(" + ");
+  return `${capitalizar(principio)} ${legibleConcentracion(datos.concentracion)}`;
 }
 
 const NOMBRE_FAMILIA = {
@@ -396,9 +413,7 @@ function Tarjeta({ datos, href }) {
       </figure>
 
       <div className="tarjeta-cuerpo">
-        <h3 className="principio">
-          {capitalizar(datos.principio_activo)} {legibleConcentracion(datos.concentracion)}
-        </h3>
+        <h3 className="principio">{tituloMedicamento(datos)}</h3>
         {familia && <p className="dosis">{capitalizar(familia)}</p>}
 
         <div className="tarjeta-pie">
@@ -654,10 +669,7 @@ function PaginaMedicamento({ clave, hayBusqueda }) {
               )}
             </figure>
             <div>
-              <h1 className="detalle-titulo">
-                {capitalizar(datos.principio_activo)}{" "}
-                {legibleConcentracion(datos.concentracion)}
-              </h1>
+              <h1 className="detalle-titulo">{tituloMedicamento(datos)}</h1>
               <p className="detalle-bajada">
                 {capitalizar(NOMBRE_FAMILIA[datos.familia] || datos.familia)}
               </p>

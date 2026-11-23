@@ -132,8 +132,9 @@ pipeline.
   por lo que `principios_activos` y `composicion` quedarían vacías. Leyendo desde
   `data/plata/isp_medicamentos.csv` y `isp_composicion.csv` se llenan las tres
   tablas sin cambiar la lógica de inserción.
-- La contraseña está en el `docker-compose.yml`, que se versiona. Para desarrollo
-  local está bien; antes de desplegar debe moverse al `.env`.
+- ~~La contraseña está en el `docker-compose.yml`, que se versiona.~~ Resuelto
+  (19-11-2026): el `docker-compose.yml` la lee de `DB_PASSWORD` en el `.env`
+  (`docker compose --env-file .env ...`).
 
 ---
 

@@ -434,6 +434,36 @@ def cargar_productos(cur, farmacias, formas):
         ids[p.get("id_global") or p["id_producto"]] = cur.fetchone()[0]
         insertados += 1
 
+    # Un producto que ya no esta en el ultimo catalogo de su farmacia deja
+    # de compararse: conserva su historial, pero su ultimo precio es
+    # antiguo y su grupo se calculo con reglas que pudieron cambiar. Solo
+    # se aplica a farmacias presentes en esta carga (plata guarda el
+    # ultimo catalogo bueno de cada una, asi que una descarga fallida no
+    # deja a una farmacia fuera).
+    cargadas = sorted({farmacias[p["farmacia"]] for p in productos
+                       if farmacias.get(p.get("farmacia"))})
+    cur.execute(
+        """
+        UPDATE productos_farmacia SET id_grupo = NULL
+        WHERE id_grupo IS NOT NULL
+          AND id_farmacia = ANY(%s)
+          AND NOT (id = ANY(%s))
+        """,
+        (cargadas, list(ids.values())),
+    )
+    retirados = cur.rowcount
+    if retirados:
+        print(f"  {retirados} productos fuera del catalogo actual dejan de compararse")
+
+    # Un grupo queda sin productos cuando cambia el criterio de agrupacion
+    # (por ejemplo, la dosis de los combinados); no tiene sentido guardarlo
+    cur.execute(
+        """
+        DELETE FROM grupos_equivalencia g
+        WHERE NOT EXISTS (SELECT 1 FROM productos_farmacia p WHERE p.id_grupo = g.id)
+        """
+    )
+
     return insertados, vinculados, ids
 
 
