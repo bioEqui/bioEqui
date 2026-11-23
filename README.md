@@ -58,4 +58,4 @@ Si una farmacia trae menos del 80% de los productos de su muestreo anterior, la 
 python pruebas/ejecutar_pruebas.py      # 23 casos; resultado en pruebas/resultados/
 ```
 
-El detalle de instalación, respaldo, migración y solución de problemas está en el Manual de administrador (`FASE 3/Evidencias Proyecto/27_Manual_de_Administrador.docx`).
+El detalle de instalación, respaldo, migración y solución de problemas está en el Manual de administrador (`FASE 2/Evidencias Proyecto/Evidencia de documentacio/27_Manual_de_Administrador.docx`).
