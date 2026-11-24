@@ -167,3 +167,6 @@ venv/
 
 # Respaldos locales de la base (pg_dump)
 respaldos/
+
+# Archivos temporales de Office (documento abierto)
+~$*
